@@ -1,0 +1,48 @@
+//From gatech's CSS
+@media only screen and (min-width: 51.1em) {
+	// #logo-wrapper { padding-top: 42px;  }
+}
+@media only screen and (min-width: 31em) and (max-width: 51em) {
+	.navbar-fixed-top {
+		display: none;
+	}
+}
+
+//Fix BOOTSTRAP replated Repsonsive
+@media(min-width: 1200px) {
+	.container, 
+	.navbar-static-top .container, 
+	.navbar-fixed-top .container, 
+	.navbar-fixed-bottom .container {
+    	width: 1024px !important;
+	}
+}
+//Fix padding issues w/navs
+@media (max-width: 979px) {
+	#globalnav { display: none; }
+	//Fix Search bars
+	.input-append { width: 100%; }
+	.input-xxlarge { width: 88% !important; }
+
+	//Fix container for full width
+	.container {
+	 width: 95% !important;
+	}
+}
+@media (max-width: 767px) {
+	div#siteNav-full, div#logo-wrapper {
+		margin-left: -20px;
+		margin-right: -20px;
+	}
+  .input-append {
+  	width: 100%;
+  	input {
+  		width: 100% !important;
+  	}
+  	button {
+  		display: none;
+
+  	}
+ 
+  }
+}

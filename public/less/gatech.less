@@ -1,0 +1,109 @@
+//Fix Width
+ .navbar-static-top .container, .navbar-fixed-top .container, .navbar-fixed-bottom .container, .container  {
+	width: 1024px;
+	margin: 0px auto;
+}
+//TOP NAVec
+.navbar {
+	margin-bottom: 0px; 
+}
+#globalnav > div {
+	height: 40px;
+	padding: 0px;
+	border-top: 2px solid rgb(153, 153, 153);
+	box-shadow: 0px 0px 10px rgb(196, 196, 196);
+	overflow: hidden;
+	margin-bottom: 0px;
+	background-image: none;
+	background-color: transparent;
+	
+	//Text Formatting
+	& a {
+		text-decoration: none;
+		color: rgb(100, 100, 100);
+		font-size: 0.86em;
+		font-weight: 700;
+		line-height: 1.2;
+		padding: 12px 10px 10px 10px;
+		overflow: hidden;
+		&:hover, &:focus, &:active {
+			background-color: rgb(245, 245, 245);
+		}
+		//Font-Awesome icons
+		& > i {
+			vertical-align: middle;
+			font-size: 1.4em;
+			line-height: 1;
+			padding-right: 5px;
+			padding-bottom: 3px;
+			color: #8C8C8C;
+
+		}
+	}
+	//Right Icons
+	& ul.pull-right {
+		 & a {
+		 	margin: 5px;
+		 	padding: 30px 0px 0px;
+		 	width: 30px;
+		 	height: 0px;
+		 }
+	}
+}
+//Right Icons
+a.facebook{
+	background-image: url(../img/gatech/icon-facebook.png);
+}
+a.flickr {
+	background-image: url(../img/gatech/icon-flickr.png);
+}
+a.googleplus {
+	background-image: url(../img/gatech/icon-googleplus.png);
+}
+a.linkedin {
+	background-image: url(../img/gatech/icon-linkedin.png);
+}
+a.pinterest {
+	background-image: url(../img/gatech/icon-pinterest.png);
+}
+a.rss {
+	background-image: url(../img/gatech/icon-rss.png);
+}
+a.twitter {
+	background-image: url(../img/gatech/icon-twitter.png);
+}
+a.youtube {
+	background-image: url(../img/gatech/icon-youtube.png);
+}
+
+//LOGO
+#logo-wrapper {
+	background: none repeat scroll 0px 0px rgb(0, 0, 0);
+	// height: 90px;
+	margin: 0px auto;
+	max-width: 1024px;
+	overflow: hidden;
+	& h1 {
+		margin: 0px;
+	}	
+	& img {
+		vertical-align: middle;
+		height: auto;
+	}
+}
+//Navbar-lower (Yellow)
+#siteNav-full {
+	max-width: 1024px;
+	margin: 0px auto;
+	margin-bottom: 20px;
+	color: rgb(0, 37, 76);
+	& a {
+		text-shadow: none;
+		&:hover {
+			transition: background 0.3s ease 0s;
+		}
+	}
+}
+.navbar-inner {
+		border: none;
+}
