@@ -4,18 +4,17 @@
  */
 
 var express = require('express');
-var routes = require('./routes');
 // var user = require('./routes/user');
 var http = require('http');
 var path = require('path');
-
+var hbs = require('hbs');
 var app = express();
 
 // all environments
 app.set('port', process.env.PORT || 3000);
 app.set('views', __dirname + '/views');  //Where templates are
-app.set('view engine', 'html'); //Init Handlebars parsing of .html files
-app.engine('html', require('hbs').__express); //Handlebars as default engine
+app.set('view engine', 'hbs'); //Init Handlebars parsing of .html files
+// app.engine('html', require('hbs').__express); //Handlebars as default engine
 app.use(express.favicon(__dirname + '/public/img/favicon.ico')); 
 app.use(express.logger('dev'));
 // app.use(express.bodyParser()); -- Parse Requests
@@ -28,8 +27,17 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-app.get('/', routes.index);
+
+//Read Partials
+var fs = require('fs');
+hbs.registerPartials(__dirname + '/views/partials');
+hbs.registerPartials(__dirname + '/views/partials/header');
+
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
+
+//Export express app for other modules to use
+module.exports.app = app;
+var routes = require('./routes.js');

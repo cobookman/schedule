@@ -1,0 +1,17 @@
+{{! Generate the semester drop-down menu}}
+
+<a id="{{active_semester.id}}" class="brand dropdown-toggle" href="#" data-toggle="dropdown">{{active_semester.name}} <b class="caret"></b></a>
+<ul id="semester-dropdown" class="dropdown-menu semester-menu">
+  {{#each semesters}}
+  	<li class="divider"></li>
+	{{#each this}}
+      <li><a href="{{this.id}}" tabindex="-1">{{this.name}}</a></li>
+    {{/each}}
+  {{/each}}
+</ul>
+
+{{! Could be loaded on demand once page loads }}
+<script>
+	var parent = document.getElementById('semester-dropdown');
+	parent.removeChild(parent.children[0]);
+</script>

@@ -1,0 +1,28 @@
+{{! Generate the gatech site header navigation bar }}
+
+  <div id="siteNav-full" class="navbar navbar-inverse">
+    <div class="navbar-inner">
+      <div class="container">
+        <ul id='navbar-items' class="nav">
+          <li class="dropdown">
+              {{> navbar_semesters}}
+          </li>
+          <li><a href="#">Search</a></li>
+          <li><a href="#">Calendar</a></li>
+          <li><a href="#about">Share</a></li>
+          <li><a href="#contact">Login</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  {{! give the currently selected tab the 'active' styling }}
+  <script>
+    var tabs = document.getElementById('navbar-items').children;
+    var active = (window.location + "").split('/')[3].toLowerCase();
+    for(var i = 0; i<tabs.length; i++) {
+      if(tabs[i].textContent.toLowerCase() === active) {
+        tabs[i].classList.add("active");
+      }
+    }
+  </script>
