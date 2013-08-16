@@ -10,7 +10,7 @@
   {{/each}}
 </ul>
 
-{{! Could be loaded on demand once page loads }}
+{{! Removes last divider.  No 'great' work-around w/o performance trade-off}}
 <script>
 	var parent = document.getElementById('semester-dropdown');
 	parent.removeChild(parent.children[0]);
