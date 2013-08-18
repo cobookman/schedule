@@ -59,7 +59,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 		//a .nttitle has a corr .ntdefault as of Aug 16, 2013
 		var courseTitles = $(".nttitle");
 		var courseInfos = $(".ntdefault");
-		var output = {};
+		var output = [];
 
 
 		//BUILD JSON for each course
@@ -82,7 +82,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 			
 
 			//Optional Data
-			var lecture_hours = infoSplit[2].trim('\n').replace('  ',' ');
+			var lecture_hours = infoSplit[2].trim('\n').replace(/ +(?= )/g,'');
 
 			var lab_hours = "";
 			if(lecture_hours!=='') { 
@@ -103,7 +103,8 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 				var course_attributes = infoSplit[8].trim('\n').replace('&amp;', '&');
 			}
 
-			output[course_num] = {
+			output.push({
+				'number' : course_num,
 				'name' : course_fullName,
 				'description' : course_description,
 				'creditHours' : credit_hours,
@@ -111,7 +112,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 				'labHours' : lab_hours,
 				'grade_basis' : grade_basis,
 				'course_attributes' : course_attributes
-			}
+			});
 		}
 
 
@@ -159,13 +160,13 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
 		//Parse course information
 		//Always present data
 		var	course_description = infoSplit[0].trim('\n'),
-			credit_hours = infoSplit[1].trim('\n').replace('     ', ' ');		
+			credit_hours = infoSplit[1].trim('\n').replace(/ +(?= )/g,'');	
 		//Optional Data
-		var lecture_hours = infoSplit[2].trim('\n').replace('     ',' ').replace('   ',' ');
+		var lecture_hours = infoSplit[2].trim('\n').replace(/ +(?= )/g,'');
 
 		var lab_hours = "";
 		if(lecture_hours!=='') { 
-			var lab_hours = infoSplit[3].trim('\n').replace('     ', ' ');
+			var lab_hours = infoSplit[3].trim('\n').replace(/ +(?= )/g,'');
 		}
 
 		var grade_basis = '';
@@ -191,7 +192,7 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
 
 		} catch (e) {
 			console.log("ERROR - oscar_api.getCourse("+department+", " + course + " ..... )");
-			var output = "ERROR, please refer to documentation";
+			var output = "ERROR, event logged";
 		}
 
 		if(typeof(callback) === "function") {
@@ -218,7 +219,7 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 
 		var sectionTitles = $('th.ddtitle');
 		var sectionInfo = $('.captiontext'); //Disregard first result
-		var output = {};
+		var output = [];
 		for(var i = 0; i < sectionTitles.length; i++) {
 			var title = $(sectionTitles[i]).text().split(" - "),
 				course_CRN      = title[1],
@@ -230,33 +231,36 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 
 			var meetingInfoRow = $(sectionInfo[i+1]).next().next(),
 				meetingInfo = $(meetingInfoRow).children();
-				var times = [],
-					days = [],
-					locations = [],
+				var where = [],
 					profs = [];
 
 			do {
-				times.push($(meetingInfo[1]).text());
-				days.push($(meetingInfo[2]).text());
-				locations.push($(meetingInfo[3]).text());
-				profs.push($(meetingInfo[6]).text().replace('   ', ' ').replace('  ', ' '));
+				var day = $(meetingInfo[2]).text();
+				var time = $(meetingInfo[1]).text();
+				var location = $(meetingInfo[3]).text();
+
+				where.push({
+					'day' : day,
+					'time' : time,
+					'location' : location
+				});
+				profs.push($(meetingInfo[6]).text().replace(/ +(?= )/g,''));
 				
 				//Get next row
 				meetingInfoRow = $(meetingInfoRow).next();
 				meetingInfo = $(meetingInfoRow).children();
 			} while($(meetingInfo[0]).text() !== "");
 
-				output[course_CRN] = {
+				output.push({
+					'crn' : course_CRN,
 					'section' : course_Section,
-					'days'	: days,
-					'times' : times,
-					'locations' : locations,
+					'where' : where,
 					'profs' : profs
-				}
+				});
 		}
 		} catch (e) {
 		 	console.log("ERROR - oscar_api.getSemester("+department+", " + course + ", " + year + ", " + semester+", ..... )");
-		 	var output = "ERROR, please refer to documentation";
+		 	var output = "ERROR, event logged";
 		}
 		if(typeof(callback) === "function") {
 			callback(JSON.stringify(output));
