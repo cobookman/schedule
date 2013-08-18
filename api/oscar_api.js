@@ -233,12 +233,12 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 				meetingInfo = $(meetingInfoRow).children();
 				var where = [];
 			do {
-				var day = $(meetingInfo[2]).text();
+				var day = $(meetingInfo[2]).text().trim(); //TRIM() needed as day might be empty
 				var time = $(meetingInfo[1]).text();
 				var location = $(meetingInfo[3]).text();
 				var type = $(meetingInfo[5]).text().replace('*','');
 				var prof = $(meetingInfo[6]).text().replace(/ +(?= )/g,'');
-
+				
 				where.push({
 					'day' : day,
 					'time' : time,
@@ -270,6 +270,48 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 	}
 }
 
-oscar_api.prototype.getSection = function(department, course, year, semester, section, callback) {
-	return 'Params: ' + department;
+oscar_api.prototype.getSection = function(department, course, year, semester, crn, callback) {
+	var date = this.genDate(semester, year);
+	department = department.toUpperCase();
+	this.getURL('https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in='+date+'&crn_in='+crn, process);
+	function process(data) {
+		$ = cheerio.load(data);
+		try { 		//If incorrect department/course/year/sem given, this will crash...so we use try-catch
+			
+			var titleHeader = $($(".ddlabel")[0]).text().split(' - ');
+			var course_fullName = titleHeader[0],
+				course_Section  = titleHeader[3];
+
+			var tableData = $(".dddefault"); 
+			var seatsCapacity = $(tableData[1]).text(),
+				seatsActual   = $(tableData[2]).text(),
+				seatsRemaining =$(tableData[3]).text(),
+				waitCapacity = $(tableData[4]).text(),
+				waitActual   = $(tableData[5]).text(),
+				waitRemaining = $(tableData[6]).text();
+
+			var output = {
+				'name' : course_fullName,
+				'section' : course_Section,
+				'seats' : {
+					'capacity' : seatsCapacity,
+					'actual' : seatsActual,
+					'remaining' : seatsRemaining,
+				},
+				'waitlist' : {
+					'capacity' : waitCapacity,
+					'actual' : waitActual,
+					'remaining' : waitRemaining
+				}
+			}
+		} catch(e) {
+		 	console.log("ERROR - oscar_api.getSection("+department+", " + course + ", " + year + ", " + semester+", "+crn+", ..... )");
+		  	var output = "ERROR, event logged";
+		}
+		if(typeof(callback) === "function") {
+			callback(output);
+		} else {
+			return output;
+		}
+	}
 }
