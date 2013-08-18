@@ -123,7 +123,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 		}
 
 		if(typeof(callback) === 'function') {
-			callback(JSON.stringify(output));
+			callback(output);
 		} else {
 			return output;
 		}
@@ -196,7 +196,7 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
 		}
 
 		if(typeof(callback) === "function") {
-			callback(JSON.stringify(output));
+			callback(output);
 		} else {
 			return output;
 		}
@@ -231,20 +231,21 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 
 			var meetingInfoRow = $(sectionInfo[i+1]).next().next(),
 				meetingInfo = $(meetingInfoRow).children();
-				var where = [],
-					profs = [];
-
+				var where = [];
 			do {
 				var day = $(meetingInfo[2]).text();
 				var time = $(meetingInfo[1]).text();
 				var location = $(meetingInfo[3]).text();
+				var type = $(meetingInfo[5]).text().replace('*','');
+				var prof = $(meetingInfo[6]).text().replace(/ +(?= )/g,'');
 
 				where.push({
 					'day' : day,
 					'time' : time,
-					'location' : location
+					'location' : location,
+					'type' : type,
+					'prof' : prof
 				});
-				profs.push($(meetingInfo[6]).text().replace(/ +(?= )/g,''));
 				
 				//Get next row
 				meetingInfoRow = $(meetingInfoRow).next();
@@ -255,7 +256,6 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 					'crn' : course_CRN,
 					'section' : course_Section,
 					'where' : where,
-					'profs' : profs
 				});
 		}
 		} catch (e) {
@@ -263,7 +263,7 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 		 	var output = "ERROR, event logged";
 		}
 		if(typeof(callback) === "function") {
-			callback(JSON.stringify(output));
+			callback(output);
 		} else {
 			return output;
 		}
