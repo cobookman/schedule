@@ -75,7 +75,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
     var that = this;
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_display_courses?sel_attr=dummy&sel_attr=%25&sel_coll=dummy&sel_coll=%25&sel_crse_end=9999&sel_crse_strt=0&sel_dept=dummy&sel_dept=%25&sel_divs=dummy&sel_divs=%25&sel_from_cred=&sel_levl=dummy&sel_levl=%25&sel_schd=dummy&sel_schd=%25&sel_subj=dummy&sel_subj='+department+'&sel_title=&sel_to_cred=&term_in='+year, process);
     function process(data) {
-        // try {        //If incorrect department given, this will crash...so we use try-catch
+        try {        //If incorrect department given, this will crash...so we use try-catch
         $ = cheerio.load(data);
         //a .nttitle has a corr .ntdefault as of Aug 16, 2013
         var courseTitles = $(".nttitle");
@@ -144,10 +144,10 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 
 
 
-        // } catch (e) {
-        //  console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
-        //  var output = "ERROR, please refer to documentation";
-        // }
+        } catch (e) {
+          console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
+          var output = "ERROR, please refer to documentation";
+        }
 
         if(typeof(callback) === 'function') {
             callback(output);
