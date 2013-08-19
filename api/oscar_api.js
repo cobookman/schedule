@@ -48,13 +48,34 @@ oscar_api.prototype.genDate = function(semester, year) {
 	}
 	return year + semester;
 }
+oscar_api.prototype.credit2num = function(str) {
+	str = str.toLowerCase().split(/to|or/);
+	var output = [];
+	for(var i = 0; i < str.length; i++) {
+		output.push(parseInt(str[i], 10));
+	}
+	return output;
 
+}
+oscar_api.prototype.to24hour = function(time) {
+	for(var j = 0; j < time.length; j ++) {
+		if(time[j].indexOf('pm') !== -1) { //has pm
+			time[j] = time[j].split(/:| /);
+			time[j] = parseInt(time[j][0], 10)+12 + ":" + time[j][1];
+		} else if(time[j].indexOf('am') !== -1) {
+			time[j] = time[j].split(/:| /);
+			time[j] = time[j][0] + ":" + time[j][1];
+		} 
+	}
+	return time;
+}
 oscar_api.prototype.getDepartment = function(department, callback) {
 	department = department.toUpperCase();
 	var year = this.genDate();
+	var that = this;
 	this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_display_courses?sel_attr=dummy&sel_attr=%25&sel_coll=dummy&sel_coll=%25&sel_crse_end=9999&sel_crse_strt=0&sel_dept=dummy&sel_dept=%25&sel_divs=dummy&sel_divs=%25&sel_from_cred=&sel_levl=dummy&sel_levl=%25&sel_schd=dummy&sel_schd=%25&sel_subj=dummy&sel_subj='+department+'&sel_title=&sel_to_cred=&term_in='+year, process);
 	function process(data) {
-		try { 		//If incorrect department given, this will crash...so we use try-catch
+		// try { 		//If incorrect department given, this will crash...so we use try-catch
 		$ = cheerio.load(data);
 		//a .nttitle has a corr .ntdefault as of Aug 16, 2013
 		var courseTitles = $(".nttitle");
@@ -82,11 +103,11 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 			
 
 			//Optional Data
-			var lecture_hours = infoSplit[2].trim('\n').replace(/ +(?= )/g,'');
+			var lecture_hours = infoSplit[2].trim('\n');
 
 			var lab_hours = "";
 			if(lecture_hours!=='') { 
-				var lab_hours = infoSplit[3].trim('\n');
+				var lab_hours = infoSplit[3].trim('\n').replace(/ +(?= )/g,'');
 			}
 
 			var grade_basis = '';
@@ -103,6 +124,12 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 				var course_attributes = infoSplit[8].trim('\n').replace('&amp;', '&');
 			}
 
+			//Fix credit data to numbers
+			credit_hours = that.credit2num(credit_hours);
+			lecture_hours = that.credit2num(lecture_hours);
+			lab_hours = that.credit2num(lab_hours);
+
+
 			output.push({
 				'number' : course_num,
 				'name' : course_fullName,
@@ -117,10 +144,10 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 
 
 
-		} catch (e) {
-			console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
-			var output = "ERROR, please refer to documentation";
-		}
+		// } catch (e) {
+		// 	console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
+		// 	var output = "ERROR, please refer to documentation";
+		// }
 
 		if(typeof(callback) === 'function') {
 			callback(output);
@@ -134,6 +161,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 oscar_api.prototype.getCourse = function(department, course, callback) {
 	var year = this.genDate();
 	var department = department.toUpperCase();
+	var that = this;
 	this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_course_detail?cat_term_in='+year+'&subj_code_in='+department+'&crse_numb_in='+course, process);
 	function process(data) {
 		try { 		//If incorrect department/course given, this will crash...so we use try-catch
@@ -181,6 +209,12 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
 		if(infoSplit.length > 8) {
 			var course_attributes = infoSplit[8].trim('\n').replace('&amp;', '&');
 		}
+
+		//Fix credit data to numbers
+		credit_hours = that.credit2num(credit_hours);
+		lecture_hours = that.credit2num(lecture_hours);
+		lab_hours = that.credit2num(lab_hours);
+
 		var output = {
 			'name' : course_fullName,
 			'description' : course_description,
@@ -212,6 +246,7 @@ oscar_api.prototype.getYear = function(department, course, year, callback) {
 oscar_api.prototype.getSemester = function(department, course, year, semester, callback) {
 	var date = this.genDate(semester, year);
 	department = department.toUpperCase();
+	var that = this;
 	this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_listcrse?term_in='+date+'&subj_in='+department+'&crse_in='+course+'&schd_in=%', process);
 	function process(data) {
 		$ = cheerio.load(data);
@@ -234,10 +269,13 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 				var where = [];
 			do {
 				var day = $(meetingInfo[2]).text().trim(); //TRIM() needed as day might be empty
-				var time = $(meetingInfo[1]).text();
+				var time = $(meetingInfo[1]).text().split(' - ');
 				var location = $(meetingInfo[3]).text();
 				var type = $(meetingInfo[5]).text().replace('*','');
 				var prof = $(meetingInfo[6]).text().replace(/ +(?= )/g,'');
+				
+				//Change time from AM/PM to 24 hour format
+				var time = that.to24hour(time);
 				
 				where.push({
 					'day' : day,
