@@ -1,0 +1,2 @@
+var config = {};
+config.dbHost = 'http://localhost:5984';

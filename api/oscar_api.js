@@ -5,11 +5,24 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'; //OSCAR's cert has some issue
 
 exports.init = function() {
     return new oscar_api();
+    var config = require('../config.js');
 }
 
 function oscar_api() {
-}
 
+}
+oscar_api.prototype.checkCache = function(resource) {
+    if(typeof resource === "undefined") {
+        return false;
+    }
+    //Check couchdb for resource
+    //request.get(config.host + "/")
+}
+oscar_api.prototype.setCache = function(resource, data) {
+    if(typeof resource === "undefined" || typeof data === "undefined") {
+        return false;
+    }
+}
 oscar_api.prototype.getURL = function(url, callback) {
     request.get(url, function(error, response, body) {
         if(!error && response.statusCode == 200) {
@@ -76,7 +89,7 @@ oscar_api.prototype.to24hour = function(time) {
             time[j][0] = parseInt(time[j][0], 10);
             //Convert pm times to 24 hour format, and handle that 12:xx pm = 12:xx
             if(time[j][2].indexOf('pm') !== -1 && time[j][0] < 12) {
-                time[j][0] = time[j][0] += 12; 
+                time[j][0] = time[j][0] + 12; 
             //convert midnight to 24 hour format (00:xx)
             } else if(time[j][2].indexOf('am') !== -1 && time[j][0] == 12) {
                 time[j][0] = 0;

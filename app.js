@@ -14,9 +14,10 @@ var app = express();
 app.set('port', process.env.PORT || 3000);
 app.set('views', __dirname + '/views');  //Where templates are
 app.set('view engine', 'hbs'); //Init Handlebars parsing of .html files
-// app.engine('html', require('hbs').__express); //Handlebars as default engine
+
 app.use(express.favicon(__dirname + '/public/img/favicon.ico')); 
 app.use(express.logger('dev'));
+
 // app.use(express.bodyParser()); -- Parse Requests
 // app.use(express.methodOverride()); -- Use custom HTTP  methods
 app.use(app.router);

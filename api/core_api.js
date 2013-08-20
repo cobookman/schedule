@@ -34,15 +34,15 @@ core_api.prototype.parseLists = function($, courseLists) {
     return output;
 }
 core_api.prototype.areaC = function(callback) {
-	this.getURL('http://www.catalog.gatech.edu/students/ugrad/core/corec.php', process);
+    this.getURL('http://www.catalog.gatech.edu/students/ugrad/core/corec.php', process);
     var that = this;
     function process(data) {
-    	try { 
+        try { 
             var $ = cheerio.load(data)
             var output = that.parseLists($, $(".pcourses"));
          } catch(e) {
-			console.log("ERROR - core_api.areaC()");
-           	var output = "ERROR";
+            console.log("ERROR - core_api.areaC()");
+            var output = "ERROR";
          }
 
 
@@ -54,15 +54,15 @@ core_api.prototype.areaC = function(callback) {
     }
 }
 core_api.prototype.areaE = function(callback) {
-	this.getURL('http://www.catalog.gatech.edu/students/ugrad/core/coree.php', process);
+    this.getURL('http://www.catalog.gatech.edu/students/ugrad/core/coree.php', process);
     var that = this;
-	function process(data) {
-		try {
+    function process(data) {
+        try {
             var $ = cheerio.load(data)
-        	var output = that.parseLists($, $(".pcourses"));
-		} catch(e) {
-			console.log("ERROR - core_api.areaC()");
-          	var output = "ERROR";
+            var output = that.parseLists($, $(".pcourses"));
+        } catch(e) {
+            console.log("ERROR - core_api.areaC()");
+            var output = "ERROR";
         }
 
         
@@ -71,7 +71,7 @@ core_api.prototype.areaE = function(callback) {
         } else {
             return output;
         }
-	}
+    }
 }
 
 core_api.prototype.globalPerspectives = function(callback) {
