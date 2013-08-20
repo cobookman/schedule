@@ -17,8 +17,8 @@ app.get('/api/oscar/:department/:course/:year/:semester', oscarController.semest
 app.get('/api/oscar/:department/:course/:year/:semester/:section', oscarController.section);
 
 app.get(/^\/api\/core\/(c|humanities)\/?$/i, coreController.areaC);
-app.get(/^\/api\/core\/(e|socialscience)\/?$/i, coreController.areaE);
-app.get(/^\/api\/core\/(gp|globalPerspectives)\/?$/i, coreController.globalPerspectives);
+app.get(/^\/api\/core\/(e|socialsciences)\/?$/i, coreController.areaE);
+app.get(/^\/api\/core\/(gp|globalperspectives)\/?$/i, coreController.globalPerspectives);
 app.get(/^\/api\/core\/(usp|usPerspectives)\/?$/i, coreController.usPerspectives);
 app.get('/api/core/ethics', coreController.ethics);
 
