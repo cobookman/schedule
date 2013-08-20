@@ -57,18 +57,40 @@ oscar_api.prototype.credit2num = function(str) {
     return output;
 
 }
+
+
+/*
+    converts am/pm time in format of:
+    [ "12:00 am" , "1:00 pm"]
+    to:
+    [ "12:00", "13:00"]
+
+    if not given proper time string outputs 'null'
+*/
 oscar_api.prototype.to24hour = function(time) {
     for(var j = 0; j < time.length; j ++) {
-        if(time[j].indexOf('pm') !== -1) { //has pm
-            time[j] = time[j].split(/:| /);
-            time[j] = parseInt(time[j][0], 10)+12 + ":" + time[j][1];
-        } else if(time[j].indexOf('am') !== -1) {
-            time[j] = time[j].split(/:| /);
-            time[j] = time[j][0] + ":" + time[j][1];
-        } 
+        time[j] = time[j].split(/:| /); 
+        //Convert 12 hour to 24 hour
+        if(time[j].length === 3) {
+
+            time[j][0] = parseInt(time[j][0], 10);
+            //Convert pm times to 24 hour format, and handle that 12:xx pm = 12:xx
+            if(time[j][2].indexOf('pm') !== -1 && time[j][0] < 12) {
+                time[j][0] = time[j][0] += 12; 
+            //convert midnight to 24 hour format (00:xx)
+            } else if(time[j][2].indexOf('am') !== -1 && time[j][0] == 12) {
+                time[j][0] = 0;
+            }
+            time[j] = time[j][0] + ":" + time[j][1];   
+        //If not given correct time format of: xx:xx am
+        } else {
+            time[j] = 'null';
+        }
     }
     return time;
 }
+
+
 oscar_api.prototype.getDepartment = function(department, callback) {
     department = department.toUpperCase();
     var year = this.genDate();
