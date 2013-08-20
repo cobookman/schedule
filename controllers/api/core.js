@@ -12,3 +12,21 @@ exports.areaE = function(req, res) {
         res.json(data);
     });
 }
+
+exports.globalPerspectives = function(req, res) {
+	api.globalPerspectives(function(data) {
+		res.json(data);
+	});
+}
+
+exports.usPerspectives = function(req, res) {
+	api.usPerspectives(function(data) {
+		res.json(data);
+	});
+}
+
+exports.ethics = function(req, res) {
+	api.ethics(function(data) {
+		res.json(data);
+	});
+}
