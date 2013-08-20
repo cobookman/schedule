@@ -89,8 +89,8 @@ oscar_api.prototype.to24hour = function(time) {
             time[j][0] = parseInt(time[j][0], 10);
             //Convert pm times to 24 hour format, and handle that 12:xx pm = 12:xx
             if(time[j][2].indexOf('pm') !== -1 && time[j][0] < 12) {
-                time[j][0] = time[j][0] + 12; 
-            //convert midnight to 24 hour format (00:xx)
+                time[j][0] += 12; 
+            //convert 12:00 am to 24 hour format (00:xx)
             } else if(time[j][2].indexOf('am') !== -1 && time[j][0] == 12) {
                 time[j][0] = 0;
             }
@@ -181,7 +181,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 
         } catch (e) {
           console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
-          var output = "ERROR, please refer to documentation";
+          var output = "ERROR, event logged";
         }
 
         if(typeof(callback) === 'function') {
@@ -306,6 +306,9 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
                 var day = $(meetingInfo[2]).text().trim(); //TRIM() needed as day might be empty
                 var time = $(meetingInfo[1]).text().split(' - ');
                 var location = $(meetingInfo[3]).text();
+                if(!location || location.toLowerCase() === 'tba') {
+                    location = null;
+                }
                 var type = $(meetingInfo[5]).text().replace('*','');
                 var prof = $(meetingInfo[6]).text().replace(/ +(?= )/g,'');
                 
