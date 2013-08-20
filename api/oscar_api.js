@@ -15,8 +15,8 @@ oscar_api.prototype.getURL = function(url, callback) {
         if(!error && response.statusCode == 200) {
             typeof callback === 'function' && callback(body);
         } else {
-            console.log(response.statusCode + " - ERROR couldn't fetch URL"); 
-            callback("ERROR: " + response.statusCode); 
+            console.log("ERROR couldn't fetch URL " + url); 
+            callback(false); 
         }
     });
 }
