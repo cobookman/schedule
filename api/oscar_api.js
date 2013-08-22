@@ -11,18 +11,99 @@ exports.init = function() {
 function oscar_api() {
 
 }
-oscar_api.prototype.checkCache = function(resource) {
-    if(typeof resource === "undefined") {
+
+//Returns string in format of: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
+oscar_api.prototype.genCacheID = function(department, course, year, semester) {
+    var cacheID = '';
+    //Check for only requirement
+    if(typeof department === 'undefined') {
         return false;
+    } else {
+        cacheID += department.toUpperCase();
     }
-    //Check couchdb for resource
-    //request.get(config.host + "/")
-}
-oscar_api.prototype.setCache = function(resource, data) {
-    if(typeof resource === "undefined" || typeof data === "undefined") {
-        return false;
+    //Check if given course, else return cacheID
+    if(typeof course === 'undefined') {
+        return cacheID;
+    } else {
+        cacheID += course;
+    }
+    //Check if given year + semester combo
+    if(typeof year === 'undefined' || typeof semester === 'undefined') {
+        return cacheID;
+    } else {
+        return (cacheID + '_' + year + semester.toUpperCase());
     }
 }
+/* 
+    Checks cache for resource 
+        - found returns resource, 
+        - not found returns false 
+        Cache Format: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
+                                    */
+oscar_api.prototype.checkCache = function(cacheID, callback) {
+    //Check cache ID
+    if(!cacheID) { return false; }
+
+    //Check if cache hit
+    request.get(config.dbHost + "/oscar_api/" + cacheID, process);
+    function process(data) {
+        var cache = JSON.parse(data);
+        var output;
+        //Cache hit
+        if(!cache.hasOwnProperty('error')) {
+            output = cache.data;
+        //Cache Miss
+        } else {
+            output = false;
+        }
+
+        if(typeof(callback) === 'function') {
+            callback(output);
+        } else {
+            return output;
+        }
+    }
+
+}
+
+/*
+    Sets cache
+        -if sets cache returns couchdb msg
+        -if can't set cache returns false
+*/
+oscar_api.prototype.setCache = function(cacheID, data, callback) {
+    //Can't set cache w/o valid data and cacheID
+    if(!cacheID || typeof data === 'undefined') { 
+        return false; 
+    } 
+    //Check if cacheID exists
+    this.checkCache(cacheID, function(cache) {
+        if(cache.hasOwnProperty('_rev')) {
+            //Update document
+            request({
+                method : 'PUT',
+                uri : config.dbHost + "/oscar_api/" + cacheID,
+                multipart : [{
+                    'content-type' : 'application/json',
+                    '_rev' : cache.rev,
+                    'data' : data
+                }]
+            }, process);
+        } else {
+            //create document
+            request({
+                method : 'PUT',
+                uri : config.dbHost + "/oscar_api/" + cacheID,
+                multipart : [{
+
+                }]
+            })
+
+        }
+    });
+
+}
+
 oscar_api.prototype.getURL = function(url, callback) {
     request.get(url, function(error, response, body) {
         if(!error && response.statusCode == 200) {
