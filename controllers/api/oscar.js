@@ -1,5 +1,4 @@
 var api = require('../../api/oscar_api').init();
-
 /* Export list of courses the requested department offers E.G: ECE */
 exports.department = function(req, res){
     api.getDepartment(req.params.department, function(data) {

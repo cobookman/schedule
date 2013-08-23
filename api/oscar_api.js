@@ -1,17 +1,20 @@
-var request = require('request');
-var cheerio = require('cheerio');
-
+var core_api = require("./core_api.js");
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'; //OSCAR's cert has some issues hence disabling of certs
 
-exports.init = function() {
-    return new oscar_api();
-    var config = require('../config.js');
-}
-
+//Inherit core_api constructor
 function oscar_api() {
+    core_api.call(this);
+}
+//Inherit core_api's
+oscar_api.prototype = Object.create(core_api.prototype);
 
+exports.init = function() {
+   return new oscar_api();
 }
 
+/* 
+   Helper Methods of oscar_api class 
+                                    */
 //Returns string in format of: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
 oscar_api.prototype.genCacheID = function(department, course, year, semester) {
     var cacheID = '';
@@ -34,86 +37,7 @@ oscar_api.prototype.genCacheID = function(department, course, year, semester) {
         return (cacheID + '_' + year + semester.toUpperCase());
     }
 }
-/* 
-    Checks cache for resource 
-        - found returns resource, 
-        - not found returns false 
-        Cache Format: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
-                                    */
-oscar_api.prototype.checkCache = function(cacheID, callback) {
-    //Check cache ID
-    if(!cacheID) { return false; }
 
-    //Check if cache hit
-    request.get(config.dbHost + "/oscar_api/" + cacheID, process);
-    function process(data) {
-        var cache = JSON.parse(data);
-        var output;
-        //Cache hit
-        if(!cache.hasOwnProperty('error')) {
-            output = cache.data;
-        //Cache Miss
-        } else {
-            output = false;
-        }
-
-        if(typeof(callback) === 'function') {
-            callback(output);
-        } else {
-            return output;
-        }
-    }
-
-}
-
-/*
-    Sets cache
-        -if sets cache returns couchdb msg
-        -if can't set cache returns false
-*/
-oscar_api.prototype.setCache = function(cacheID, data, callback) {
-    //Can't set cache w/o valid data and cacheID
-    if(!cacheID || typeof data === 'undefined') { 
-        return false; 
-    } 
-    //Check if cacheID exists
-    this.checkCache(cacheID, function(cache) {
-        if(cache.hasOwnProperty('_rev')) {
-            //Update document
-            request({
-                method : 'PUT',
-                uri : config.dbHost + "/oscar_api/" + cacheID,
-                multipart : [{
-                    'content-type' : 'application/json',
-                    '_rev' : cache.rev,
-                    'data' : data
-                }]
-            }, process);
-        } else {
-            //create document
-            request({
-                method : 'PUT',
-                uri : config.dbHost + "/oscar_api/" + cacheID,
-                multipart : [{
-
-                }]
-            })
-
-        }
-    });
-
-}
-
-oscar_api.prototype.getURL = function(url, callback) {
-    request.get(url, function(error, response, body) {
-        if(!error && response.statusCode == 200) {
-            typeof callback === 'function' && callback(body);
-        } else {
-            console.log("ERROR couldn't fetch URL " + url); 
-            callback(false); 
-        }
-    });
-}
 oscar_api.prototype.genDate = function(semester, year) {
     //Find current year if not provided
     var date = new Date();
@@ -184,6 +108,9 @@ oscar_api.prototype.to24hour = function(time) {
     return time;
 }
 
+/* 
+   Core  Methods of oscar_api class 
+                                    */
 
 oscar_api.prototype.getDepartment = function(department, callback) {
     department = department.toUpperCase();
@@ -192,7 +119,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_display_courses?sel_attr=dummy&sel_attr=%25&sel_coll=dummy&sel_coll=%25&sel_crse_end=9999&sel_crse_strt=0&sel_dept=dummy&sel_dept=%25&sel_divs=dummy&sel_divs=%25&sel_from_cred=&sel_levl=dummy&sel_levl=%25&sel_schd=dummy&sel_schd=%25&sel_subj=dummy&sel_subj='+department+'&sel_title=&sel_to_cred=&term_in='+year, process);
     function process(data) {
         try {        //If incorrect department given, this will crash...so we use try-catch
-        $ = cheerio.load(data);
+        $ = that.cheerio.load(data);
         //a .nttitle has a corr .ntdefault as of Aug 16, 2013
         var courseTitles = $(".nttitle");
         var courseInfos = $(".ntdefault");
@@ -203,11 +130,11 @@ oscar_api.prototype.getDepartment = function(department, callback) {
         for(var i = 0; i < courseTitles.length; i++) {
             var courseSplit = $(courseTitles[i]).text().split(' ');
             var course_fullName = (function() {
-                    var fullName = "";
-                    for(var j = 3; j < courseSplit.length; j++ ) {
-                        fullName += courseSplit[j] + " ";
-                    }
-                    return fullName.slice(0,-1);
+                var fullName = "";
+                for(var j = 3; j < courseSplit.length; j++ ) {
+                    fullName += courseSplit[j] + " ";
+                }
+                return fullName.slice(0,-1);
             })();
 
             var course_num = courseSplit[1],
@@ -261,8 +188,8 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 
 
         } catch (e) {
-          console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
-          var output = "ERROR, event logged";
+            console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
+            var output = "ERROR, event logged";
         }
 
         if(typeof(callback) === 'function') {
@@ -281,16 +208,16 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_course_detail?cat_term_in='+year+'&subj_code_in='+department+'&crse_numb_in='+course, process);
     function process(data) {
         try {       //If incorrect department/course given, this will crash...so we use try-catch
-        $ = cheerio.load(data);
+        $ = that.cheerio.load(data);
         var infoSplit = $(".ntdefault").html().split('<br>');
         var courseSplit = $(".nttitle").text().split(' ');
 
 
-        /* 
+         /*
             The code bellow repeates a lot of previous code (NOT DRY),
             This was done due to a few special cases, and to allow future 
-            fine tuning per api 
-        */
+            fine tuning per api                                                */
+        
 
         //Parse course title
         var course_fullName = (function() {
@@ -365,7 +292,7 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
     var that = this;
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_listcrse?term_in='+date+'&subj_in='+department+'&crse_in='+course+'&schd_in=%', process);
     function process(data) {
-        $ = cheerio.load(data);
+        $ = that.cheerio.load(data);
         try {       //If incorrect department/course/year/sem given, this will crash...so we use try-catch
 
         var sectionTitles = $('th.ddtitle');
@@ -431,8 +358,9 @@ oscar_api.prototype.getSection = function(department, course, year, semester, cr
     var date = this.genDate(semester, year);
     department = department.toUpperCase();
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in='+date+'&crn_in='+crn, process);
+    var that = this;
     function process(data) {
-        $ = cheerio.load(data);
+        $ = that.cheerio.load(data);
         try {       //If incorrect department/course/year/sem given, this will crash...so we use try-catch
             
             var titleHeader = $($(".ddlabel")[0]).text().split(' - ');

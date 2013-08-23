@@ -1,4 +1,4 @@
-var api = require('../../api/core_api').init();
+var api = require('../../api/core_curriculum_api').init();
 
 
 exports.areaC = function(req, res){
