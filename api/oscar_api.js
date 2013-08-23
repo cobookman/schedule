@@ -128,6 +128,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 
         //BUILD JSON for each course
         for(var i = 0; i < courseTitles.length; i++) {
+          try {
             var courseSplit = $(courseTitles[i]).text().split(' ');
             var course_fullName = (function() {
                 var fullName = "";
@@ -183,6 +184,9 @@ oscar_api.prototype.getDepartment = function(department, callback) {
                 'grade_basis' : grade_basis,
                 'course_attributes' : course_attributes
             });
+          } catch(e) {
+            console.log("ERROR, oscar_api.getDepartment("+department+",...), i: " + i);
+          }
         }
 
 
