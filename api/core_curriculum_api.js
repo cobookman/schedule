@@ -1,5 +1,5 @@
 var core_api = require('./core_api.js')
-//Inherit core_api constructor
+//run and inherit core_api constructor
 function core_curriculum_api() {
     core_api.call(this);
 }

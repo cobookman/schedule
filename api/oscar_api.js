@@ -1,7 +1,7 @@
 var core_api = require("./core_api.js");
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'; //OSCAR's cert has some issues hence disabling of certs
 
-//Inherit core_api constructor
+//run and inherit core_api constructor
 function oscar_api() {
     core_api.call(this);
 }
