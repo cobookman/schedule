@@ -2,85 +2,66 @@
 	Core API functionality, this class is inherited by all other apis
 		exporting of module @ bottom of file
 																		*/
-
+//Core_API specific
+var cradle = require('cradle');
 
 //Constructor
 var core_api = function() {
 	this.request = require('request');
     this.cheerio = require('cheerio');
     this.config = require('../config.js');
+    this.connection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
+    this.db = {}; //Init our db connections
 }
 
 /* 
     Checks cache for resource 
-        - found returns resource, 
+        - found returns resource w/callback, 
         - not found returns false 
-        Cache Format: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
                                     */
-core_api.prototype.checkCache = function(cachePath, callback) {
-    //Check cache ID
-    if(!cacheID) { return false; }
-
-    //Check if cache hit
-    request.get(this.config.dbHost  + cachePath, process);
-    function process(data) {
-        var cache = JSON.parse(data);
-        var output;
-        //Cache hit
-        if(!cache.hasOwnProperty('error')) {
-            output = cache.data;
-        //Cache Miss
-        } else {
-            output = false;
-        }
-
-        if(typeof(callback) === 'function') {
-            callback(output);
-        } else {
-            return output;
-        }
+core_api.prototype.dbConnection = function(dbName) {
+    if(!this.db.hasOwnProperty(dbName)) {
+        this.db[dbName] = this.connection.database(dbName);
     }
+}
 
+core_api.prototype.getCache = function(dbName, items, callback) {
+    //Async operation, needs a callback
+    if(typeof callback !== 'function') { return false; }
+
+    //check if dabase has been connected to already (cache purposes)
+    this.dbConnection(dbName);
+
+    //Get items
+    this.db[dbName].get(items, function(error, doc) {
+        if(!error) {
+            callback(doc);
+        } else {
+            console.log('ERROR Fetching cache ('+dbName+', '+JSON.stringify(items)+'): ' + JSON.stringify(error));
+            callback(false);
+        }
+    });
 }
 
 /*
     Sets cache
         -if sets cache returns couchdb msg
-        -if can't set cache returns false
+        -if can't set cache returns false through callback
 */
-core_api.prototype.setCache = function(cachePath, data, callback) {
-    //Can't set cache w/o valid data and cacheID
-    if(!cachePath || typeof data === 'undefined') { 
-        return false; 
-    } 
-    //Check if cacheID exists
-    this.checkCache(cacheID, function(cache) {
-        if(cache.hasOwnProperty('_rev')) {
-            //Update document
-            request({
-                method : 'PUT',
-                uri : this.config.dbHost + cachePath,
-                multipart : [{
-                    'content-type' : 'application/json',
-                    '_rev' : cache.rev,
-                    'data' : data
-                }]
-            }, process);
-        } else {
-            //create document
-            request({
-                method : 'PUT',
-                uri : this.config.dbHost + "/oscar_api/" + cacheID,
-                multipart : [{
+core_api.prototype.setCache = function(dbName, item, data, callback) {
+    //Check if database has a connection already
+    this.dbConnection(dbName);
 
-                }]
-            })
-
+    //Initiate the save
+    this.db[dbName].save(item, data, function(error, res) {
+        if(!error && typeof callback === 'function') {
+            callback(res);
+        } else if(error && typeof callback === 'function') {
+            console.log('ERROR setting cache ('+dbName+', '+JSON.stringify(item)+'): ' + JSON.stringify(error));
+            callback(false);
         }
     });
-
 }
-
 core_api.prototype.getURL = function(url, callback) {
     this.request.get(url, function(error, response, body) {
         if(!error && response.statusCode == 200) {

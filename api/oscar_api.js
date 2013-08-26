@@ -16,28 +16,39 @@ exports.init = function() {
    Helper Methods of oscar_api class 
                                     */
 //Returns string in format of: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
-oscar_api.prototype.genCacheID = function(department, course, year, semester) {
+oscar_api.prototype.genCacheID = function(req) {
     var cacheID = '';
     //Check for only requirement
-    if(typeof department === 'undefined') {
+    if(typeof req.params.department === 'undefined') {
         return false;
     } else {
-        cacheID += department.toUpperCase();
+        cacheID += req.params.department.toUpperCase();
     }
     //Check if given course, else return cacheID
-    if(typeof course === 'undefined') {
+    if(typeof req.params.course === 'undefined') {
         return cacheID;
     } else {
-        cacheID += course;
+        cacheID += req.params.course.toUpperCase();;
     }
-    //Check if given year + semester combo
-    if(typeof year === 'undefined' || typeof semester === 'undefined') {
+    //Check if given year
+    if(typeof req.params.year === 'undefined') {
         return cacheID;
     } else {
-        return (cacheID + '_' + year + semester.toUpperCase());
+        cacheID += '_' + req.params.year;
+    }
+    //Check if given semester
+    if(typeof req.params.semester === 'undefined') {
+        return cacheID;
+    } else {
+        cacheID += req.params.semester.toUpperCase();
+    }
+    //Check if given section (CRN Number) 
+    if(typeof req.params.section === 'undefined') {
+        return cacheID;
+    } else {
+        return cacheID += '-' + req.params.section.toUpperCase();
     }
 }
-
 oscar_api.prototype.genDate = function(semester, year) {
     //Find current year if not provided
     var date = new Date();
@@ -83,7 +94,7 @@ oscar_api.prototype.credit2num = function(str) {
     to:
     [ "12:00", "13:00"]
 
-    if not given proper time string outputs 'null'
+    if not given proper time string outputs ""
 */
 oscar_api.prototype.to24hour = function(time) {
     for(var j = 0; j < time.length; j ++) {
@@ -102,7 +113,7 @@ oscar_api.prototype.to24hour = function(time) {
             time[j] = time[j][0] + ":" + time[j][1];   
         //If not given correct time format of: xx:xx am
         } else {
-            time[j] = 'null';
+            time[j] = "";
         }
     }
     return time;
@@ -193,7 +204,7 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 
         } catch (e) {
             console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
-            var output = "ERROR, event logged";
+            var output = [];
         }
 
         if(typeof(callback) === 'function') {
@@ -207,7 +218,8 @@ oscar_api.prototype.getDepartment = function(department, callback) {
 
 oscar_api.prototype.getCourse = function(department, course, callback) {
     var year = this.genDate();
-    var department = department.toUpperCase();
+    department = department.toUpperCase();
+    course = course.toUpperCase();
     var that = this;
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_course_detail?cat_term_in='+year+'&subj_code_in='+department+'&crse_numb_in='+course, process);
     function process(data) {
@@ -273,7 +285,7 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
 
         } catch (e) {
             console.log("ERROR - oscar_api.getCourse("+department+", " + course + " ..... )");
-            var output = "ERROR, event logged";
+            var output = [];
         }
 
         if(typeof(callback) === "function") {
@@ -293,6 +305,7 @@ oscar_api.prototype.getYear = function(department, course, year, callback) {
 oscar_api.prototype.getSemester = function(department, course, year, semester, callback) {
     var date = this.genDate(semester, year);
     department = department.toUpperCase();
+    course = course.toUpperCase();
     var that = this;
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_listcrse?term_in='+date+'&subj_in='+department+'&crse_in='+course+'&schd_in=%', process);
     function process(data) {
@@ -319,7 +332,7 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
                 var time = $(meetingInfo[1]).text().split(' - ');
                 var location = $(meetingInfo[3]).text();
                 if(!location || location.toLowerCase() === 'tba') {
-                    location = null;
+                    location = "";
                 }
                 var type = $(meetingInfo[5]).text().replace('*','');
                 var prof = $(meetingInfo[6]).text().replace(/ +(?= )/g,'');
@@ -348,7 +361,7 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
         }
         } catch (e) {
             console.log("ERROR - oscar_api.getSemester("+department+", " + course + ", " + year + ", " + semester+", ..... )");
-            var output = "ERROR, event logged";
+            var output = [];
         }
         if(typeof(callback) === "function") {
             callback(output);
@@ -361,6 +374,8 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 oscar_api.prototype.getSection = function(department, course, year, semester, crn, callback) {
     var date = this.genDate(semester, year);
     department = department.toUpperCase();
+    course = course.toUpperCase();
+    crn = crn.toUpperCase();
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in='+date+'&crn_in='+crn, process);
     var that = this;
     function process(data) {
@@ -395,7 +410,7 @@ oscar_api.prototype.getSection = function(department, course, year, semester, cr
             }
         } catch(e) {
             console.log("ERROR - oscar_api.getSection("+department+", " + course + ", " + year + ", " + semester+", "+crn+", ..... )");
-            var output = "ERROR, event logged";
+            var output = [];
         }
         if(typeof(callback) === "function") {
             callback(output);
