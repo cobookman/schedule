@@ -17,7 +17,6 @@ exports.department = function(req, res) {
             res.jsonp(data);
         });
     }
-
 }
 
 /* Particular Course information - E.g: ECE 2035 */

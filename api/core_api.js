@@ -10,7 +10,7 @@ var core_api = function() {
 	this.request = require('request');
     this.cheerio = require('cheerio');
     this.config = require('../config.js');
-    this.connection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
+    this.cradleConnection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
     this.db = {}; //Init our db connections
 }
 
@@ -50,7 +50,7 @@ core_api.prototype.cacheRequest = function(req) {
                                     */
 core_api.prototype.dbConnection = function(dbName) {
     if(!this.db.hasOwnProperty(dbName)) {
-        this.db[dbName] = this.connection.database(dbName);
+        this.db[dbName] = this.cradleConnection.database(dbName);
     }
 }
 
