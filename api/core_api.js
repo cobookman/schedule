@@ -17,7 +17,6 @@ var core_api = function() {
 
 core_api.prototype.resetCache = function(dbName, cacheID, data) {
     if(!(Array.isArray(data) && data.length == 0)) { //don't cache empty arrays
-        console.log('yerp');f
         this.setCache(this.config.cache_database[dbName], cacheID, {'data' : data, 'last_modified' : new Date() } );         
     }
 }
