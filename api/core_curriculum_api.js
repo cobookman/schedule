@@ -33,7 +33,7 @@ core_curriculum_api.prototype.areaC = function(callback) {
             var output = that.parseLists($, $(".pcourses"));
          } catch(e) {
             console.log("ERROR - core_curriculum_api.areaC()");
-            var output = "ERROR";
+            var output = [];
          }
 
 
@@ -53,7 +53,7 @@ core_curriculum_api.prototype.areaE = function(callback) {
             var output = that.parseLists($, $(".pcourses"));
         } catch(e) {
             console.log("ERROR - core_curriculum_api.areaC()");
-            var output = "ERROR";
+            var output = [];
         }
 
         
@@ -74,7 +74,7 @@ core_curriculum_api.prototype.globalPerspectives = function(callback) {
             var output = that.parseLists($, $(".pcourses"));
         } catch(e) {
             console.log("ERROR - core_curriculum_api.globalPerspectives()");
-            var output = "ERROR"
+            var output = [];
         }
 
         if(typeof(callback) === 'function') {
@@ -94,7 +94,7 @@ core_curriculum_api.prototype.usPerspectives = function(callback) {
             var output = that.parseLists($, $(".pcourses"));
         } catch(e) {
             console.log("ERROR - core_curriculum_api.usPerspectives()");
-            var output = "ERROR"
+            var output = [];
         }
 
         if(typeof(callback) === 'function') {
@@ -110,11 +110,11 @@ core_curriculum_api.prototype.ethics = function(callback) {
     var that = this;
     function process(data) {
         try {
-            var $ = cheerio.load(data);
+            var $ = that.cheerio.load(data);
             var output = that.parseLists($, $(".pcourses"));
         } catch(e) {
             console.log("ERROR - core_curriculum_api.ethics()");
-            var output = "ERROR"
+            var output = [];
         }
 
         if(typeof(callback) === 'function') {

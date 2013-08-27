@@ -28,7 +28,6 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-
 //Read Partials
 var fs = require('fs');
 hbs.registerPartials(__dirname + '/views/partials');

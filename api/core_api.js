@@ -14,6 +14,36 @@ var core_api = function() {
     this.db = {}; //Init our db connections
 }
 
+
+core_api.prototype.resetCache = function(dbName, cacheID, data) {
+    if(!(Array.isArray(data) && data.length == 0)) { //don't cache empty arrays
+        console.log('yerp');f
+        this.setCache(this.config.cache_database[dbName], cacheID, {'data' : data, 'last_modified' : new Date() } );         
+    }
+}
+/*
+    Checks cache for content, if found sends the cache to user, 
+        else hits the cache miss action
+                                                    */
+core_api.prototype.checkCache = function(res, dbName, cacheID, cacheMiss) {
+    this.getCache(this.config.cache_database[dbName], cacheID, function(cache) {
+        if(cache.hasOwnProperty('data')) {
+            res.jsonp(cache.data);
+        } else {
+            cacheMiss();
+        }
+    });
+}
+
+//find if cache not requested 
+core_api.prototype.cacheRequest = function(req) {
+    if(req.query.hasOwnProperty('cache') && req.query.cache === 'false') {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 /* 
     Checks cache for resource 
         - found returns resource w/callback, 
@@ -37,7 +67,6 @@ core_api.prototype.getCache = function(dbName, items, callback) {
         if(!error) {
             callback(doc);
         } else {
-            console.log('ERROR Fetching cache ('+dbName+', '+JSON.stringify(items)+'): ' + JSON.stringify(error));
             callback(false);
         }
     });

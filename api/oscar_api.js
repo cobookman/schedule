@@ -38,10 +38,11 @@ oscar_api.prototype.genCacheID = function(req) {
     }
     //Check if given semester
     if(typeof req.params.semester === 'undefined') {
-        return cacheID;
+        cacheID += this.currSemester().toUpperCase();
     } else {
         cacheID += req.params.semester.toUpperCase();
     }
+
     //Check if given section (CRN Number) 
     if(typeof req.params.section === 'undefined') {
         return cacheID;
@@ -49,6 +50,20 @@ oscar_api.prototype.genCacheID = function(req) {
         return cacheID += '-' + req.params.section.toUpperCase();
     }
 }
+oscar_api.prototype.currSemester = function() {
+    date = new Date();
+    var month = date.getMonth() + 1; //getMonth() has jan as 0
+    var semester;
+    if(month >= 8) {
+        semester = 'fall';
+    } else if(month >= 5) {
+        semester = 'summer';
+    } else {
+        semester = 'spring';
+    }
+    return semester;
+}
+
 oscar_api.prototype.genDate = function(semester, year) {
     //Find current year if not provided
     var date = new Date();
@@ -59,13 +74,7 @@ oscar_api.prototype.genDate = function(semester, year) {
     //Find current semester if not provided
     if(typeof semester === "undefined") {
         var month = date.getMonth() + 1; //getMonth() has jan as 0
-        if(month >= 8) {
-            semester = 'fall';
-        } else if(month >= 5) {
-            semester = 'summer';
-        } else {
-            semester = 'spring';
-        }
+        semester = this.currSemester();
     } else {
         semester = semester.toLowerCase();
     }
