@@ -17,6 +17,25 @@ grade_api.prototype.genCacheID = function(department, course) {
 		return ("" + department.toUpperCase() + course.toUpperCase());
 	}
 }
+
+grade_api.prototype.getCourseData = function(req, dbName, callback) {
+    var cacheID = this.genCacheID(req.params.department, req.params.course);
+ 
+    this.getCache(dbName, cacheID, function(cache) {
+        if(cache.hasOwnProperty('data')) {
+            callback(cache.data);
+        } else {
+            cacheMiss();
+        }
+    });
+
+    function cacheMiss() {
+        console.log("ERROR getting course data: getCourseData - "+req.params.department+", " + req.params.course + " - cacheID: " + cacheID);
+        res.jsonp('false');
+    }
+}
+
+
 /* 
 	Super ugly code which I used to migrate my mysql database to couchdb
 	phymyadmin gave incorrect json, hence the multiple replace statements - ugly I know
