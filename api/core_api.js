@@ -17,17 +17,16 @@ var core_api = function() {
 
 core_api.prototype.resetCache = function(dbName, cacheID, data) {
     if(!(Array.isArray(data) && data.length == 0)) { //don't cache empty arrays
-        this.setCache(this.config.cache_database[dbName], cacheID, {'data' : data, 'last_modified' : new Date() } );         
+        this.setCache(dbName, cacheID, {'data' : data, 'last_modified' : new Date() } );         
     }
 }
 /*
-    Checks cache for content, if found sends the cache to user, 
-        else hits the cache miss action
+    Checks cache for data, then routes accordingly
                                                     */
-core_api.prototype.checkCache = function(res, dbName, cacheID, cacheMiss) {
+core_api.prototype.checkCache = function(dbName, cacheID, cacheHit, cacheMiss) {
     this.getCache(dbName, cacheID, function(cache) {
-        if(cache.hasOwnProperty('data')) {
-            res.jsonp(cache.data);
+        if(typeof cache !== 'undefined') {
+            cacheHit(cache);
         } else {
             cacheMiss();
         }
@@ -48,6 +47,7 @@ core_api.prototype.cacheRequest = function(req) {
         - found returns resource w/callback, 
         - not found returns false 
         -Internal only
+        -database is the full database
                                     */
 core_api.prototype.dbConnection = function(database) {
     if(!this.db.hasOwnProperty(database)) {

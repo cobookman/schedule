@@ -5,7 +5,15 @@ function sendData(req, res, cacheID, api_hook) {
     if(!api.cacheRequest(req)) {
         cacheMiss();
     } else {
-        api.checkCache(res, dbName, cacheID, cacheMiss);
+        api.checkCache(dbName, cacheID, cacheHit, cacheMiss);
+    }
+
+    function cacheHit(cache) {
+        if(cache.hasOwnProperty('data')) {
+            res.jsonp(cache.data);
+        } else { //Doesn't have the necessary propety we need
+            cacheMiss();
+        }
     }
 
     function cacheMiss() {
