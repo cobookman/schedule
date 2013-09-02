@@ -18,23 +18,90 @@ grade_api.prototype.genCacheID = function(department, course) {
 	}
 }
 
-grade_api.prototype.getCourseData = function(req, dbName, callback) {
-    var cacheID = this.genCacheID(req.params.department, req.params.course);
- 
-    this.getCache(dbName, cacheID, function(cache) {
-        if(cache.hasOwnProperty('data')) {
-            callback(cache.data);
-        } else {
-            cacheMiss();
-        }
-    });
 
-    function cacheMiss() {
-        console.log("ERROR getting course data: getCourseData - "+req.params.department+", " + req.params.course + " - cacheID: " + cacheID);
-        res.jsonp('false');
-    }
+grade_api.prototype.updateStatistics = function(dbName, callback) {
+	var cacheIDlist = this.checkCache(dbName, '_all_docs', parseList, error);
+	var that = this;
+	function parseList(idList) {
+		for(var i = 0; i < idList.length; i++) {
+			/* For each ID in the list, fetch the data, and 'parse the course data'
+				So that statistics can be generated
+				if a cacheMiss occurs throw an error
+														*/
+			that.checkCache(dbName, idList[i].id, parseCourse, error);
+		}
+
+		//Action after updated
+		callback();
+		function parseCourse(course) {
+			var courseOverall = {
+				'A' : [],
+				'B' : [],
+				'C' : [],
+				'D' : [],
+				'F' : [],
+				'W' : [],
+				'gpa' : []
+			}
+			console.log("Running parseCourse for: " + course._id);
+			for(var prof in course.data) {
+				var profOverall = {
+					'A' : [],
+					'B' : [],
+					'C' : [],
+					'D' : [],
+					'F' : [],
+					'W' : [],
+					'gpa' : []
+				}
+				for(var year in course.data[prof]) {
+					if(isNaN(year)) { break; } //There is a 'name' field for each prof to give the full name
+					for(var semester in course.data[prof][year]) {
+						for(var section in course.data[prof][year][semester]) {
+							var sectionData = course.data[prof][year][semester][section];
+							for(var property in sectionData) {
+								if(courseOverall.hasOwnProperty(property)) {
+									courseOverall[property].push(sectionData[property]);
+								}
+								if(profOverall.hasOwnProperty(property)) {
+									profOverall[property].push(sectionData[property]);
+								}
+							}//Property Loop
+						}//Section loop
+					}//Semester Loop
+				}//year loop
+				//End of enumeration of professor's statistics, calculate statistics and push
+				var profStats = {
+					'gpa' : that.genBoxplotStats(that.toFloat(profOverall.gpa)),
+					'A' : that.jStat.mean(that.toFloat(profOverall.A)).toFixed(2),
+					'B' : that.jStat.mean(that.toFloat(profOverall.B)).toFixed(2),
+					'C' : that.jStat.mean(that.toFloat(profOverall.C)).toFixed(2),
+					'D' : that.jStat.mean(that.toFloat(profOverall.D)).toFixed(2),
+					'F' : that.jStat.mean(that.toFloat(profOverall.F)).toFixed(2),
+					'W' : that.jStat.mean(that.toFloat(profOverall.W)).toFixed(2)
+				};
+				course.data[prof].statistics = profStats;
+			}//Prof Loop
+			var courseStats = {
+				'gpa' : that.genBoxplotStats(that.toFloat(courseOverall.gpa)),
+				'A' : that.jStat.mean(that.toFloat(courseOverall.A)).toFixed(2),
+				'B' : that.jStat.mean(that.toFloat(courseOverall.B)).toFixed(2),
+				'C' : that.jStat.mean(that.toFloat(courseOverall.C)).toFixed(2),
+				'D' : that.jStat.mean(that.toFloat(courseOverall.D)).toFixed(2),
+				'F' : that.jStat.mean(that.toFloat(courseOverall.F)).toFixed(2),
+				'W' : that.jStat.mean(that.toFloat(courseOverall.W)).toFixed(2)			
+			}
+			course.data.statistics = courseStats;
+			//Update each cache
+			that.setCache(dbName, course._id, course);
+		}//End parseCourse function
+
+	}
+
+	function error() {
+		throw new Error("Error while parsing data");
+	}
 }
-
 
 /* 
 	Super ugly code which I used to migrate my mysql database to couchdb
@@ -98,6 +165,8 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 			for(courseID in structuredData) {
 				that.setCache(dbName, courseID, { 'data' : structuredData[courseID] });
 			}
+			//Update statistics
+			this.updateStatistics('grade_data_api', function() {});
 			console.log("DONE");
 	});
 }

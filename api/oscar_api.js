@@ -78,6 +78,7 @@ oscar_api.prototype.genDate = function(semester, year) {
     } else {
         semester = semester.toLowerCase();
     }
+
     switch(semester) {
         case "spring" : semester = '02'; break; 
         case "summer" : semester = '05'; break;
@@ -304,11 +305,6 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
         }
     }
 
-}
-
-oscar_api.prototype.getYear = function(department, course, year, callback) {
-    //Run get getSemester (just use closest semester)
-    this.getSemester(department, course, year, undefined, callback);
 }
 
 oscar_api.prototype.getSemester = function(department, course, year, semester, callback) {

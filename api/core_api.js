@@ -12,8 +12,51 @@ var core_api = function() {
     this.config = require('../config.js');
     this.cradleConnection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
     this.db = {}; //Init our db connections
+    this.jStat = require('jstat').jStat;
 }
 
+core_api.prototype.toFloat = function(dataset) {
+    for(var i = 0; i < dataset.length; i++) {
+        dataset[i] = parseFloat(dataset[i], 10);
+    }
+    return dataset;
+}
+/* 
+    Input array of #s, outputs object with statistics
+                                                        */
+core_api.prototype.genBoxplotStats = function(dataset) {
+    var quartiles = [0, 0, 0],
+        stdev = 0,
+        IQR = 0,
+        outliers = [];
+    if(dataset.length > 1) {
+        quartiles = this.jStat.quartiles(dataset);
+        stdev = this.jStat.stdev(dataset);   
+        IQR = quartiles[2] - quartiles[0];
+         
+        var highBound = quartiles[0] - 1.5*IQR,
+            lowBound = quartiles[2] + 1.5*IQR;
+            
+        for(var i = 0; i<dataset.length; i++) {
+            if(dataset[i] > highBound || dataset[i] < lowBound) {
+                outliers.push(dataset[i]);
+            }
+        }
+    }
+    var mean = this.jStat.mean(dataset)
+    //Get Outliers and mean
+    
+    
+
+    return ({
+        "mean" : mean.toFixed(2),
+        "stddev" : stdev.toFixed(2),
+        "q1" : quartiles[0].toFixed(2),
+        "q2" : quartiles[1].toFixed(2),
+        "q3" : quartiles[2].toFixed(2),
+        "outliers" : outliers
+    });
+}
 
 core_api.prototype.resetCache = function(dbName, cacheID, data) {
     if(!(Array.isArray(data) && data.length == 0)) { //don't cache empty arrays

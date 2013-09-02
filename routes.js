@@ -12,7 +12,6 @@ app.get('/search', searchController.search);
 /* restFul API */
 app.get('/api/oscar/:department', oscarController.department);
 app.get('/api/oscar/:department/:course', oscarController.course);
-app.get('/api/oscar/:department/:course/:year', oscarController.year);
 app.get('/api/oscar/:department/:course/:year/:semester', oscarController.semester);
 app.get('/api/oscar/:department/:course/:year/:semester/:section', oscarController.section);
 

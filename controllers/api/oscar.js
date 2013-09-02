@@ -52,20 +52,6 @@ exports.course = function(req, res){
     }
 }
 
-/* every section in the current year for requested course */
-exports.year = function(req, res){
-    var cacheID = api.genCacheID(req);
-    sendData(req, res, cacheID, cacheMiss);
-
-    function cacheMiss() {
-        api.getYear(req.params.department, req.params.course, req.params.year, function(data) {
-            api.resetCache(dbName, cacheID, data);
-            res.jsonp(data);
-        });
-    }
-    
-}
-
 /* List of sections in the current year/semester for requested course */
 exports.semester = function(req, res){
     var cacheID = api.genCacheID(req);
@@ -79,30 +65,30 @@ exports.semester = function(req, res){
     }
 }
 
-/* Information on the requested section */
+/* 
+    Information on the requested section 
+    -Differs from above functions in that cache is only held for < 5mins
+                                                                                */
 exports.section = function(req, res) {
     var cacheID = api.genCacheID(req);
-    if(!api.cacheRequest(req)) {
+
+    if(!api.cacheRequest(req)) { //Did they ask for cache hit?
         cacheMiss();
-    /* 
-        We want more up to date information for this section,
-        hence we check the last_modified param, if > 'x' time refresh 
-    */
     } else {
-        api.getCache(api.config.cache_database['oscar_api'], cacheID, function(cache) {
-            if(cache.hasOwnProperty('data') && cache.hasOwnProperty('last_modified')) { //Cache Hit
-                var last_modified = new Date(cache.last_modified);
-                var current = new Date();
-                if((current - last_modified) < api.config.sectionCacheHoldTime) { //No refresh needed
-                    res.jsonp(cache.data);
-                } else {
-                    cacheMiss();
-                }
+        api.getCache(dbName, cacheID, cacheHit, cacheMiss);
+    }
+
+    function cacheHit(cache) {
+        if(cache.hasOwnProperty('data') && cache.hasOwnProperty('last_modified')) {
+            var timeHeld = (new Date()) - (new Date(cache.last_modified)); 
+            if( timeHeld < api.config.sectionCacheHoldTime) {
+                res.jsonp(cache.data);
             } else {
                 cacheMiss();
             }
-        });
-
+        } else { //Cache Was not formatted correctly
+            cacheMiss();
+        }
     }
 
     function cacheMiss() {
