@@ -6,6 +6,7 @@ var oscarController = require('./controllers/api/oscar.js');
 var coreCurriculumController = require('./controllers/api/core_curriculum.js');
 var errorAPIController = require('./controllers/api/error.js');
 var gradeController = require('./controllers/api/grades.js');
+var elasticSearchController = require('./controllers/api/elastic_search.js');
 /* Site Routes */
 app.get('/search', searchController.search);
 

@@ -16,10 +16,12 @@ core_curriculum_api.prototype.parseLists = function($, courseLists) {
         var courseList_children = $(courseLists[i]).children();
         for(var j = 0; j < courseList_children.length; j++) {
             var courseName = $(courseList_children[j]).text().trim().split(' '); 
+            if(!(courseName === '&nbsp;' || courseName === '' || typeof courseName === 'undefined')) {
                 output.push({ 
                     "department" : courseName[0],
                     "number"     : courseName[1]
-            });
+                });   
+            }
         }
     }
     return output;

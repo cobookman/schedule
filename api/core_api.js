@@ -10,6 +10,7 @@ var core_api = function() {
 	this.request = require('request');
     this.cheerio = require('cheerio');
     this.config = require('../config.js');
+    this.departments = require('../department_list.js');
     this.cradleConnection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
     this.db = {}; //Init our db connections
     this.jStat = require('jstat').jStat;

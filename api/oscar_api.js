@@ -73,7 +73,6 @@ oscar_api.prototype.genDate = function(semester, year) {
 
     //Find current semester if not provided
     if(typeof semester === "undefined") {
-        var month = date.getMonth() + 1; //getMonth() has jan as 0
         semester = this.currSemester();
     } else {
         semester = semester.toLowerCase();
@@ -91,7 +90,13 @@ oscar_api.prototype.credit2num = function(str) {
     str = str.toLowerCase().split(/to|or/);
     var output = [];
     for(var i = 0; i < str.length; i++) {
-        output.push(parseInt(str[i], 10));
+        var num = parseFloat(str[i]);
+        if(isNaN(num)) { 
+            num = ""; 
+        } else {
+            num = num.toFixed(2);
+        }
+        output.push(num);
     }
     return output;
 
@@ -133,9 +138,22 @@ oscar_api.prototype.to24hour = function(time) {
    Core  Methods of oscar_api class 
                                     */
 
-oscar_api.prototype.getDepartment = function(department, callback) {
-    department = department.toUpperCase();
-    var year = this.genDate();
+oscar_api.prototype.getDepartment = function(parameters, callback) {
+    if(typeof parameters === 'object') {
+        if(parameters.hasOwnProperty('semester') && parameters.hasOwnProperty('year')) {
+            var year = this.genDate(parameters.semester, parameters.year);
+        } else {
+            var year = this.genDate();
+        }
+        if(parameters.hasOwnProperty('department')) {
+            var department = parameters.department.toUpperCase();
+        } else {
+            throw new Error("No department specified");
+        }
+    } else { //No optional parameters given
+        var department = parameters.toUpperCase();
+        var year = this.genDate();
+    }
     var that = this;
     this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_display_courses?sel_attr=dummy&sel_attr=%25&sel_coll=dummy&sel_coll=%25&sel_crse_end=9999&sel_crse_strt=0&sel_dept=dummy&sel_dept=%25&sel_divs=dummy&sel_divs=%25&sel_from_cred=&sel_levl=dummy&sel_levl=%25&sel_schd=dummy&sel_schd=%25&sel_subj=dummy&sel_subj='+department+'&sel_title=&sel_to_cred=&term_in='+year, process);
     function process(data) {
@@ -194,8 +212,8 @@ oscar_api.prototype.getDepartment = function(department, callback) {
             lecture_hours = that.credit2num(lecture_hours);
             lab_hours = that.credit2num(lab_hours);
 
-
             output.push({
+                'department' : department,
                 'number' : course_num,
                 'name' : course_fullName,
                 'description' : course_description,
@@ -285,6 +303,8 @@ oscar_api.prototype.getCourse = function(department, course, callback) {
         lab_hours = that.credit2num(lab_hours);
 
         var output = {
+            'department' : department,
+            'number' : course,
             'name' : course_fullName,
             'description' : course_description,
             'creditHours' : credit_hours,
@@ -319,7 +339,13 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
 
         var sectionTitles = $('th.ddtitle');
         var sectionInfo = $('.captiontext'); //Disregard first result
-        var output = [];
+        var output = {
+            'department' : department,
+            'number' : course,
+            'year' : year,
+            'semester' : semester,
+            'sections' : []
+        };
         for(var i = 0; i < sectionTitles.length; i++) {
             var title = $(sectionTitles[i]).text().split(" - "),
                 course_CRN      = title[1],
@@ -358,7 +384,7 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
                 meetingInfo = $(meetingInfoRow).children();
             } while($(meetingInfo[0]).text() !== "");
 
-                output.push({
+                output.sections.push({
                     'crn' : course_CRN,
                     'section' : course_Section,
                     'where' : where,
@@ -400,6 +426,11 @@ oscar_api.prototype.getSection = function(department, course, year, semester, cr
                 waitRemaining = $(tableData[6]).text();
 
             var output = {
+                'department' : department,
+                'number' : course,
+                'year' : year,
+                'semester' : semester,
+                'crn' : crn,
                 'name' : course_fullName,
                 'section' : course_Section,
                 'seats' : {
