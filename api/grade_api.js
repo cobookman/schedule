@@ -12,7 +12,7 @@ exports.init = function() {
 
 grade_api.prototype.genCacheID = function(department, course) {
 	if(typeof department === 'undefined' || typeof course === 'undefined') {
-		return false;
+		throw new Error("undefined function parameters, department: " + department + ", course: " + course);
 	} else {
 		return ("" + department.toUpperCase() + course.toUpperCase());
 	}
@@ -112,8 +112,7 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 	var that = this;
 	fs.readFile(filepath, 'utf8', function(err, data) {
 		if(err) {
-			console.log("ERROR!" + err); 
-			return false; 
+			throw new Error("Couldn't read file at: " + filepath + ", error: " + err);
 		}
 		//Get rid of stupid phpmyadmin header /** **/
 		

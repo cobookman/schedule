@@ -20,7 +20,7 @@ oscar_api.prototype.genCacheID = function(req) {
     var cacheID = '';
     //Check for only requirement
     if(typeof req.params.department === 'undefined') {
-        return false;
+        throw new Error("Cannot gen cacheID without department defined");
     } else {
         cacheID += req.params.department.toUpperCase();
     }

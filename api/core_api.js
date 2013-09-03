@@ -69,7 +69,7 @@ core_api.prototype.resetCache = function(dbName, cacheID, data) {
                                                     */
 core_api.prototype.checkCache = function(dbName, cacheID, cacheHit, cacheMiss) {
     this.getCache(dbName, cacheID, function(cache) {
-        if(typeof cache !== 'undefined') {
+        if(typeof cache !== 'undefined' && cache !== false) {
             cacheHit(cache);
         } else {
             cacheMiss();
@@ -131,11 +131,8 @@ core_api.prototype.setCache = function(dbName, item, data, callback) {
     this.db[dbName].save(item, data, function(error, res) {
         if(!error && typeof callback === 'function') {
             callback(res);
-        } else if(error && typeof callback === 'function') {
-            console.log('ERROR setting cache ('+dbName+', '+JSON.stringify(item)+'): ' + JSON.stringify(error));
-            callback(false);
         } else if(error) {
-            console.log('ERROR setting cache ('+dbName+', '+JSON.stringify(item)+'): ' + JSON.stringify(error));
+            throw new Error('ERROR setting cache ('+dbName+', '+JSON.stringify(item)+'): ' + JSON.stringify(error));
         }
     });
 }
@@ -144,8 +141,7 @@ core_api.prototype.getURL = function(url, callback) {
         if(!error && response.statusCode == 200) {
             typeof callback === 'function' && callback(body);
         } else {
-            console.log("ERROR couldn't fetch URL " + url); 
-            callback(false); 
+            throw new Error("Couldn't fetch URL: " + url + "Response code: " + response.statusCode);
         }
     });
 }

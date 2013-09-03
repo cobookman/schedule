@@ -14,7 +14,7 @@ exports.course = function(req, res) {
     }
 
     function cacheMiss() {
-        res.jsonp(false);   
+        res.jsonp([]);   
     }
 }
 
@@ -25,15 +25,15 @@ exports.prof = function(req, res) {
     api.getCache(dbName, cacheID, cacheHit, cacheMiss); 
     
     function cacheHit(cache) {
-        if(cache.hasOwnProperty('data') && cache.data.hasOwnProperty(profID)) {
-            res.jsonp(cache.data[profID]);
+        if(cache.hasOwnProperty('data') && cache.data.profs.hasOwnProperty(profID)) {
+            res.jsonp(cache.data.profs[profID]);
         } else { 
             cacheMiss();
         }
     }
 
     function cacheMiss() {
-        res.jsonp(false);
+        res.jsonp([]);
     }
 }
 
@@ -45,15 +45,15 @@ exports.year = function(req, res) {
     api.getCache(dbName, cacheID, cacheHit, cacheMiss); 
 
     function cacheHit(cache) {
-        if(cache.hasOwnProperty('data') && cache.data.hasOwnProperty(profID) && cache.data[profID].hasOwnProperty(year)) {
-            res.jsonp(cache.data[profID][year]);
+        if(cache.hasOwnProperty('data') && cache.data.profs.hasOwnProperty(profID) && cache.data.profs[profID].years.hasOwnProperty(year)) {
+            res.jsonp(cache.data.porofs[profID].years[year]);
         } else { 
             cacheMiss();
         }
     }
 
     function cacheMiss() {
-        res.jsonp(false);
+        res.jsonp([]);
     }
 }
 
@@ -66,18 +66,18 @@ exports.semester = function(req, res) {
     api.getCache(dbName, cacheID, cacheHit, cacheMiss); 
 
     function cacheHit(cache) {
-        if(cache.hasOwnProperty('data') && cache.data.hasOwnProperty(profID) 
-            && cache.data[profID].hasOwnProperty(year) 
-            && cache.data[profID][year].hasOwnProperty(semester)) {
+        if(cache.hasOwnProperty('data') && cache.data.profs.hasOwnProperty(profID) 
+            && cache.data.profs[profID].years.hasOwnProperty(year) 
+            && cache.data.profs[profID].years[year].semesters.hasOwnProperty(semester)) {
 
-            res.jsonp(cache.data[profID][year][semester]);
+            res.jsonp(cache.data.profs[profID].years[year].semesters[semester]);
         } else { 
             cacheMiss();
         }
     }
 
     function cacheMiss() {
-        res.jsonp(false);
+        res.jsonp([]);
     }
 }
 
