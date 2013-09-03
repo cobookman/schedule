@@ -44,7 +44,7 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
 				'gpa' : []
 			}
 			console.log("Running parseCourse for: " + course._id);
-			for(var prof in course.data) {
+			for(var prof in course.data.profs) {
 				var profOverall = {
 					'A' : [],
 					'B' : [],
@@ -54,11 +54,10 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
 					'W' : [],
 					'gpa' : []
 				}
-				for(var year in course.data[prof]) {
-					if(isNaN(year)) { break; } //There is a 'name' field for each prof to give the full name
-					for(var semester in course.data[prof][year]) {
-						for(var section in course.data[prof][year][semester]) {
-							var sectionData = course.data[prof][year][semester][section];
+				for(var year in course.data.profs[prof].years) {
+					for(var semester in course.data.profs[prof].years[year].semesters) {
+						for(var section in course.data.profs[prof].years[year].semesters[semester].sections) {
+							var sectionData = course.data.profs[prof].years[year].semesters[semester].sections[section];
 							for(var property in sectionData) {
 								if(courseOverall.hasOwnProperty(property)) {
 									courseOverall[property].push(sectionData[property]);
@@ -80,7 +79,7 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
 					'F' : that.jStat.mean(that.toFloat(profOverall.F)).toFixed(2),
 					'W' : that.jStat.mean(that.toFloat(profOverall.W)).toFixed(2)
 				};
-				course.data[prof].statistics = profStats;
+				course.data.profs[prof].statistics = profStats;
 			}//Prof Loop
 			var courseStats = {
 				'gpa' : that.genBoxplotStats(that.toFloat(courseOverall.gpa)),
@@ -119,9 +118,9 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 		//Get rid of stupid phpmyadmin header /** **/
 		
 			data = data.split('/');
-			for(var i = 0; i < data.length; i++) {
-				// console.log("data["+i+"]: " + data[i].length);
-			}
+			// for(var i = 0; i < data.length; i++) {
+			// 	console.log("data["+i+"]: " + data[i].length);
+			// }
 			
 			data[6] = data[6].replace(/\\/g, "").replace(/(:\s+)(\w+\.?\w*)/g, '$1"$2"').replace(/\w+(\")+\w/g, '$1').replace(/\"\"(\w+)\"\"/g,'"$1"').replace(/\"(\w+)\"\"/g, '$1"');
 			var data = JSON.parse(data[6]);
@@ -138,19 +137,19 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 				
 				//INIT crazy obj
 				if(typeof structuredData[item.courseID] === 'undefined') {
-					structuredData[item.courseID] = {};
+					structuredData[item.courseID] = { 'profs' : {} };
 				}
-				if(typeof structuredData[item.courseID][item.profID] === 'undefined') {
-					structuredData[item.courseID][item.profID] = { 'name' : item.Prof };
+				if(typeof structuredData[item.courseID].profs[item.profID] === 'undefined') {
+					structuredData[item.courseID].profs[item.profID] = { 'name' : item.Prof, 'years' : {} };
 				}
-				if(typeof structuredData[item.courseID][item.profID][year] === 'undefined') {
-					structuredData[item.courseID][item.profID][year] = {};
+				if(typeof structuredData[item.courseID].profs[item.profID].years[year] === 'undefined') {
+					structuredData[item.courseID].profs[item.profID].years[year] = { 'semesters' : {} };
 				}
-				if(typeof structuredData[item.courseID][item.profID][year][semester] ==='undefined') {
-					structuredData[item.courseID][item.profID][year][semester] = { };
+				if(typeof structuredData[item.courseID].profs[item.profID].years[year].semesters[semester] ==='undefined') {
+					structuredData[item.courseID].profs[item.profID].years[year].semesters[semester] = { 'sections' : {} };
 				}
 
-				structuredData[item.courseID][item.profID][year][semester][item.Section] = {
+				structuredData[item.courseID].profs[item.profID].years[year].semesters[semester].sections[item.Section] = {
   					'A': item.A,
   					'B': item.B,
   					'C': item.C,
@@ -166,7 +165,8 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 				that.setCache(dbName, courseID, { 'data' : structuredData[courseID] });
 			}
 			//Update statistics
-			this.updateStatistics('grade_data_api', function() {});
+			// var dbName = 'grade_data_2';
+			// that.updateStatistics(dbName, function() {});
 			console.log("DONE");
 	});
 }

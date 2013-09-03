@@ -80,3 +80,12 @@ exports.semester = function(req, res) {
         res.jsonp(false);
     }
 }
+
+exports.refreshStatistics = function(req, res) {
+    this.updateStatistics(dbName, function() { res.jsonp(["Refreshed"]); });
+}
+
+exports.importJSON = function(req, res) {
+    var filepath = '/Users/colin/srv/schedule/api/Data.json';
+    this.push2Cache(dbName, filepath);
+}

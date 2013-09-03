@@ -26,6 +26,13 @@ app.get('/api/grade/:department/:course', gradeController.course);
 app.get('/api/grade/:department/:course/:profID', gradeController.prof);
 app.get('/api/grade/:department/:course/:profID/:year', gradeController.year);
 app.get('/api/grade/:department/:course/:profID/:year/:semester', gradeController.semester);
+/*
+	WARNING DO NOT ENABLE UNLES YOU WANT TO RUN THEM, POTENTIAL GRADE DATA LOSS, BACKUP DATABASE!
+							ONCE FUNCTION RUNS PLEASE RE-COMMENT		
+														*/
+//app.get('/api/grade/refreshStatistics', gradeController.refreshStatistics); //Enable this to allow refreshing of statistics through web interface
+//app.get('/api/grade/importJson', gradeController.importJSON); 	//Import the JSON database dump to couchDB, filepath defined in gradeController
+
 
 /* Catch-All API ERROR MESSAGES */
 app.get('/api/*', errorAPIController.error);
