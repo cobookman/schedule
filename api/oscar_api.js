@@ -18,36 +18,27 @@ exports.init = function() {
 //Returns string in format of: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
 oscar_api.prototype.genCacheID = function(req) {
     var cacheID = '';
-    //Check for only requirement
-    if(typeof req.params.department === 'undefined') {
-        throw new Error("Cannot gen cacheID without department defined");
+    if(typeof req.params.year === 'undefined' ||
+       typeof req.params.semester === 'undefined' ||
+       typeof req.params.department === 'undefined') {
+        
+        throw new Error("Cannot gen cacheID without year/semester/department defined");
     } else {
-        cacheID += req.params.department.toUpperCase();
+        cacheID += (req.params.year + req.params.semester.toUpperCase() + "-" + req.params.department.toUpperCase());
     }
+    
     //Check if given course, else return cacheID
     if(typeof req.params.course === 'undefined') {
         return cacheID;
     } else {
         cacheID += req.params.course.toUpperCase();;
     }
-    //Check if given year
-    if(typeof req.params.year === 'undefined') {
-        return cacheID;
-    } else {
-        cacheID += '_' + req.params.year;
-    }
-    //Check if given semester
-    if(typeof req.params.semester === 'undefined') {
-        cacheID += this.currSemester().toUpperCase();
-    } else {
-        cacheID += req.params.semester.toUpperCase();
-    }
 
-    //Check if given section (CRN Number) 
-    if(typeof req.params.section === 'undefined') {
+    //Check if given crn
+    if(typeof req.params.crn === 'undefined') {
         return cacheID;
     } else {
-        return cacheID += '-' + req.params.section.toUpperCase();
+        return cacheID += '-' + req.params.crn.toUpperCase();
     }
 }
 oscar_api.prototype.currSemester = function() {
@@ -64,7 +55,7 @@ oscar_api.prototype.currSemester = function() {
     return semester;
 }
 
-oscar_api.prototype.genDate = function(semester, year) {
+oscar_api.prototype.genDate = function(year, semester) {
     //Find current year if not provided
     var date = new Date();
     if(typeof year === "undefined") {
@@ -137,205 +128,99 @@ oscar_api.prototype.to24hour = function(time) {
 /* 
    Core  Methods of oscar_api class 
                                     */
-
-oscar_api.prototype.getDepartment = function(parameters, callback) {
-    if(typeof parameters === 'object') {
-        if(parameters.hasOwnProperty('semester') && parameters.hasOwnProperty('year')) {
-            var year = this.genDate(parameters.semester, parameters.year);
-        } else {
-            var year = this.genDate();
-        }
-        if(parameters.hasOwnProperty('department')) {
-            var department = parameters.department.toUpperCase();
-        } else {
-            throw new Error("No department specified");
-        }
-    } else { //No optional parameters given
-        var department = parameters.toUpperCase();
-        var year = this.genDate();
-    }
+oscar_api.prototype.getDepartment = function(department, year, semester, callback) {
+    var year = this.genDate(year, semester);
+    department = department.toUpperCase();
     var that = this;
-    this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_display_courses?sel_attr=dummy&sel_attr=%25&sel_coll=dummy&sel_coll=%25&sel_crse_end=9999&sel_crse_strt=0&sel_dept=dummy&sel_dept=%25&sel_divs=dummy&sel_divs=%25&sel_from_cred=&sel_levl=dummy&sel_levl=%25&sel_schd=dummy&sel_schd=%25&sel_subj=dummy&sel_subj='+department+'&sel_title=&sel_to_cred=&term_in='+year, process);
+    try { 
+        this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_display_courses?sel_attr=dummy&sel_attr=%25&sel_coll=dummy&sel_coll=%25&sel_crse_end=9999&sel_crse_strt=0&sel_dept=dummy&sel_dept=%25&sel_divs=dummy&sel_divs=%25&sel_from_cred=&sel_levl=dummy&sel_levl=%25&sel_schd=dummy&sel_schd=%25&sel_subj=dummy&sel_subj='+department+'&sel_title=&sel_to_cred=&term_in='+year, process);
+    } catch(e) {
+        console.log("Error fetching and parsing url: " + JSON.stringify(e));
+    }
+    
     function process(data) {
-        try {        //If incorrect department given, this will crash...so we use try-catch
         $ = that.cheerio.load(data);
         //a .nttitle has a corr .ntdefault as of Aug 16, 2013
         var courseTitles = $(".nttitle");
         var courseInfos = $(".ntdefault");
         var output = [];
-
-
+        
         //BUILD JSON for each course
         for(var i = 0; i < courseTitles.length; i++) {
-          try {
-            var courseSplit = $(courseTitles[i]).text().split(' ');
-            var course_fullName = (function() {
-                var fullName = "";
-                for(var j = 3; j < courseSplit.length; j++ ) {
-                    fullName += courseSplit[j] + " ";
-                }
-                return fullName.slice(0,-1);
-            })();
-
-            var course_num = courseSplit[1],
+            try {
+                var courseSplit = $(courseTitles[i]).text().split(' ');
+                var course_fullName = (function() {
+                    var fullName = "";
+                    for(var j = 3; j < courseSplit.length; j++ ) {
+                        fullName += courseSplit[j] + " ";
+                    }
+                    return fullName.slice(0,-1);
+                })();
+                var course_num = courseSplit[1],
                 infoSplit = $(courseInfos[i]).html().split('<br>');
             
-            //Always present
-            var course_description = infoSplit[0].trim('\n'),
+                //Always present
+                var course_description = infoSplit[0].trim('\n'),
                 credit_hours = infoSplit[1].trim('\n');
             
+                //Optional Data
+                var lecture_hours = infoSplit[2].trim('\n');
 
-            //Optional Data
-            var lecture_hours = infoSplit[2].trim('\n');
+                var lab_hours = "";
+                if(lecture_hours!=='') { 
+                    var lab_hours = infoSplit[3].trim('\n').replace(/ +(?= )/g,'');
+                }
 
-            var lab_hours = "";
-            if(lecture_hours!=='') { 
-                var lab_hours = infoSplit[3].trim('\n').replace(/ +(?= )/g,'');
+                var grade_basis = '';
+                if(lab_hours !== "") {
+                    var grade_basis = infoSplit[5].split('>')[2].trim('\n').replace('&amp;', '&');
+                } else if(lecture_hours !== "") {
+                    var grade_basis = infoSplit[4].split('>')[2].trim('\n').replace('&amp;', '&');
+                } else {
+                    var grade_basis = infoSplit[3].split('>')[2].trim('\n').replace('&amp;', '&');
+                }
+
+                var course_attributes = '';
+                if(infoSplit.length > 8) {
+                    var course_attributes = infoSplit[8].trim('\n').replace('&amp;', '&');
+                }
+                //Fix credit data to numbers
+                credit_hours = that.credit2num(credit_hours);
+                lecture_hours = that.credit2num(lecture_hours);
+                lab_hours = that.credit2num(lab_hours);
+                output.push({
+                    'department' : department,
+                    'number' : course_num,
+                    'name' : course_fullName,
+                    'description' : course_description,
+                    'creditHours' : credit_hours,
+                    'lectureHours' : lecture_hours,
+                    'labHours' : lab_hours,
+                    'grade_basis' : grade_basis,
+                    'course_attributes' : course_attributes
+                });
+            } catch(e) {
+                console.log("ERROR, oscar_api.getDepartment("+department+",...), i: " + i);
             }
-
-            var grade_basis = '';
-            if(lab_hours !== "") {
-                var grade_basis = infoSplit[5].split('>')[2].trim('\n').replace('&amp;', '&');
-            } else if(lecture_hours !== "") {
-                var grade_basis = infoSplit[4].split('>')[2].trim('\n').replace('&amp;', '&');
-            } else {
-                var grade_basis = infoSplit[3].split('>')[2].trim('\n').replace('&amp;', '&');
-            }
-
-            var course_attributes = '';
-            if(infoSplit.length > 8) {
-                var course_attributes = infoSplit[8].trim('\n').replace('&amp;', '&');
-            }
-
-            //Fix credit data to numbers
-            credit_hours = that.credit2num(credit_hours);
-            lecture_hours = that.credit2num(lecture_hours);
-            lab_hours = that.credit2num(lab_hours);
-
-            output.push({
-                'department' : department,
-                'number' : course_num,
-                'name' : course_fullName,
-                'description' : course_description,
-                'creditHours' : credit_hours,
-                'lectureHours' : lecture_hours,
-                'labHours' : lab_hours,
-                'grade_basis' : grade_basis,
-                'course_attributes' : course_attributes
-            });
-          } catch(e) {
-            console.log("ERROR, oscar_api.getDepartment("+department+",...), i: " + i);
-          }
-        }
-
-
-
-        } catch (e) {
-            console.log("ERROR - oscar_api.getDepartment("+department+", ..... )");
-            var output = [];
-        }
-
-        if(typeof(callback) === 'function') {
-            callback(output);
-        } else {
-            return output;
         }
         
-    }
-}
+        callback(output);
+    }//End Process
+}//End getDepartment
 
-oscar_api.prototype.getCourse = function(department, course, callback) {
-    var year = this.genDate();
+oscar_api.prototype.getCourse = function(department, course, year, semester, callback) {
+    var date = this.genDate(year, semester);
     department = department.toUpperCase();
     course = course.toUpperCase();
     var that = this;
-    this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_course_detail?cat_term_in='+year+'&subj_code_in='+department+'&crse_numb_in='+course, process);
-    function process(data) {
-        try {       //If incorrect department/course given, this will crash...so we use try-catch
-        $ = that.cheerio.load(data);
-        var infoSplit = $(".ntdefault").html().split('<br>');
-        var courseSplit = $(".nttitle").text().split(' ');
-
-
-         /*
-            The code bellow repeates a lot of previous code (NOT DRY),
-            This was done due to a few special cases, and to allow future 
-            fine tuning per api                                                */
-        
-
-        //Parse course title
-        var course_fullName = (function() {
-            var fullName = "";
-            for(var j = 3; j < courseSplit.length; j++ ) {
-                fullName += courseSplit[j] + " ";
-            }
-            return fullName.slice(0,-1);
-        })();
-
-        //Parse course information
-        //Always present data
-        var course_description = infoSplit[0].trim('\n'),
-            credit_hours = infoSplit[1].trim('\n').replace(/ +(?= )/g,'');  
-        //Optional Data
-        var lecture_hours = infoSplit[2].trim('\n').replace(/ +(?= )/g,'');
-
-        var lab_hours = "";
-        if(lecture_hours!=='') { 
-            var lab_hours = infoSplit[3].trim('\n').replace(/ +(?= )/g,'');
-        }
-
-        var grade_basis = '';
-        if(lab_hours !== "") {
-            var grade_basis = infoSplit[5].split('>')[2].trim('\n').replace('&amp;', '&');
-        } else if(lecture_hours !== "") {
-            var grade_basis = infoSplit[4].split('>')[2].trim('\n').replace('&amp;', '&');
-        } else {
-            var grade_basis = infoSplit[3].split('>')[2].trim('\n').replace('&amp;', '&');
-        }
-        var course_attributes = '';
-        if(infoSplit.length > 8) {
-            var course_attributes = infoSplit[8].trim('\n').replace('&amp;', '&');
-        }
-
-        //Fix credit data to numbers
-        credit_hours = that.credit2num(credit_hours);
-        lecture_hours = that.credit2num(lecture_hours);
-        lab_hours = that.credit2num(lab_hours);
-
-        var output = {
-            'department' : department,
-            'number' : course,
-            'name' : course_fullName,
-            'description' : course_description,
-            'creditHours' : credit_hours,
-            'lectureHours' : lecture_hours,
-            'labHours' : lab_hours,
-            'grade_basis' : grade_basis,
-        }
-
-        } catch (e) {
-            console.log("ERROR - oscar_api.getCourse("+department+", " + course + " ..... )");
-            var output = [];
-        }
-
-        if(typeof(callback) === "function") {
-            callback(output);
-        } else {
-            return output;
-        }
+    try {
+        this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_listcrse?term_in='+date+'&subj_in='+department+'&crse_in='+course+'&schd_in=%', process);
+    } catch(e) {
+        console.log("Error fetching and parsing url: " + JSON.stringify(e));
     }
 
-}
-
-oscar_api.prototype.getSemester = function(department, course, year, semester, callback) {
-    var date = this.genDate(semester, year);
-    department = department.toUpperCase();
-    course = course.toUpperCase();
-    var that = this;
-    this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_listcrse?term_in='+date+'&subj_in='+department+'&crse_in='+course+'&schd_in=%', process);
     function process(data) {
         $ = that.cheerio.load(data);
-        try {       //If incorrect department/course/year/sem given, this will crash...so we use try-catch
 
         var sectionTitles = $('th.ddtitle');
         var sectionInfo = $('.captiontext'); //Disregard first result
@@ -346,6 +231,7 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
             'semester' : semester,
             'sections' : []
         };
+
         for(var i = 0; i < sectionTitles.length; i++) {
             var title = $(sectionTitles[i]).text().split(" - "),
                 course_CRN      = title[1],
@@ -390,68 +276,57 @@ oscar_api.prototype.getSemester = function(department, course, year, semester, c
                     'where' : where,
                 });
         }
-        } catch (e) {
-            console.log("ERROR - oscar_api.getSemester("+department+", " + course + ", " + year + ", " + semester+", ..... )");
-            var output = [];
-        }
-        if(typeof(callback) === "function") {
-            callback(output);
-        } else {
-            return output;
-        }
-    }
-}
 
-oscar_api.prototype.getSection = function(department, course, year, semester, crn, callback) {
-    var date = this.genDate(semester, year);
+        callback(output);
+    }//End Process
+}//End getSemester
+
+oscar_api.prototype.getCRN = function(department, course, year, semester, crn, callback) {
+    var date = this.genDate(year, semester);
     department = department.toUpperCase();
     course = course.toUpperCase();
     crn = crn.toUpperCase();
-    this.getURL('https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in='+date+'&crn_in='+crn, process);
+    try { 
+        this.getURL('https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in='+date+'&crn_in='+crn, process);
+    } catch(e) {
+        console.log("Error fetching and parsing url: " + JSON.stringify(e));
+    }
+
     var that = this;
     function process(data) {
         $ = that.cheerio.load(data);
-        try {       //If incorrect department/course/year/sem given, this will crash...so we use try-catch
-            
-            var titleHeader = $($(".ddlabel")[0]).text().split(' - ');
-            var course_fullName = titleHeader[0],
+
+        var titleHeader = $($(".ddlabel")[0]).text().split(' - ');
+        var course_fullName = titleHeader[0],
                 course_Section  = titleHeader[3];
 
-            var tableData = $(".dddefault"); 
-            var seatsCapacity = $(tableData[1]).text(),
-                seatsActual   = $(tableData[2]).text(),
-                seatsRemaining =$(tableData[3]).text(),
-                waitCapacity = $(tableData[4]).text(),
-                waitActual   = $(tableData[5]).text(),
-                waitRemaining = $(tableData[6]).text();
-
-            var output = {
-                'department' : department,
-                'number' : course,
-                'year' : year,
-                'semester' : semester,
-                'crn' : crn,
-                'name' : course_fullName,
-                'section' : course_Section,
-                'seats' : {
-                    'capacity' : seatsCapacity,
-                    'actual' : seatsActual,
-                    'remaining' : seatsRemaining,
-                },
-                'waitlist' : {
-                    'capacity' : waitCapacity,
-                    'actual' : waitActual,
-                    'remaining' : waitRemaining
-                }
+        var tableData = $(".dddefault"); 
+        var seatsCapacity = $(tableData[1]).text(),
+            seatsActual   = $(tableData[2]).text(),
+            seatsRemaining =$(tableData[3]).text(),
+            waitCapacity = $(tableData[4]).text(),
+            waitActual   = $(tableData[5]).text(),
+            waitRemaining = $(tableData[6]).text();
+        
+        var output = {
+            'department' : department,
+            'number' : course,
+            'year' : year,
+            'semester' : semester,
+            'crn' : crn,
+            'name' : course_fullName,
+            'section' : course_Section,
+            'seats' : {
+                'capacity' : seatsCapacity,
+                'actual' : seatsActual,
+                'remaining' : seatsRemaining,
+            },
+            'waitlist' : {
+                'capacity' : waitCapacity,
+                'actual' : waitActual,
+                'remaining' : waitRemaining
             }
-        } catch(e) {
-            console.log("ERROR - oscar_api.getSection("+department+", " + course + ", " + year + ", " + semester+", "+crn+", ..... )");
-            var output = [];
         }
-        if(typeof(callback) === "function") {
-            callback(output);
-        } else {
-            return output;
-        }
-    }
-}
+        callback(output);
+    }//End Process
+}//End getCRN

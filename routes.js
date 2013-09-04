@@ -11,10 +11,9 @@ var elasticSearchController = require('./controllers/api/elastic_search.js');
 app.get('/search', searchController.search);
 
 /* restFul API */
-app.get('/api/oscar/:department', oscarController.department);
-app.get('/api/oscar/:department/:course', oscarController.course);
-app.get('/api/oscar/:department/:course/:year/:semester', oscarController.semester);
-app.get('/api/oscar/:department/:course/:year/:semester/:section', oscarController.section);
+app.get('/api/oscar/:year/:semester/:department', oscarController.department);
+app.get('/api/oscar/:year/:semester/:department/:course', oscarController.course);
+app.get('/api/oscar/:year/:semester/:department/:course/:crn', oscarController.crn);
 
 app.get(/^\/api\/core\/(c|humanities)\/?$/i, coreCurriculumController.areaC);
 app.get(/^\/api\/core\/(e|socialsciences)\/?$/i, coreCurriculumController.areaE);

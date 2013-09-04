@@ -32,33 +32,20 @@ exports.department = function(req, res) {
     sendData(req, res, cacheID, cacheMiss);
     
     function cacheMiss() {
-        api.getDepartment(req.params.department, function(data) {
+        api.getDepartment(req.params.department, req.params.year, req.params.semester, function(data) {
             api.resetCache(dbName, cacheID, data)            
             res.jsonp(data);
         });
     }
 }
 
-/* Particular Course information - E.g: ECE 2035 */
+/* List of sections in the current year/semester for requested course */
 exports.course = function(req, res){
     var cacheID = api.genCacheID(req);
     sendData(req, res, cacheID, cacheMiss);
-    
-    function cacheMiss() {
-        api.getCourse(req.params.department, req.params.course, function(data) {
-            api.resetCache(dbName, cacheID, data);
-            res.jsonp(data);
-        });
-    }
-}
-
-/* List of sections in the current year/semester for requested course */
-exports.semester = function(req, res){
-    var cacheID = api.genCacheID(req);
-    sendData(req, res, cacheID, cacheMiss);
 
     function cacheMiss() {
-        api.getSemester(req.params.department, req.params.course, req.params.year, req.params.semester, function(data) {
+        api.getCourse(req.params.department, req.params.course, req.params.year, req.params.semester, function(data) {
             api.resetCache(dbName, cacheID, data);
             res.jsonp(data);
         });
@@ -69,7 +56,7 @@ exports.semester = function(req, res){
     Information on the requested section 
     -Differs from above functions in that cache is only held for < 5mins
                                                                                 */
-exports.section = function(req, res) {
+exports.crn = function(req, res) {
     var cacheID = api.genCacheID(req);
 
     if(!api.cacheRequest(req)) { //Did they ask for cache hit?
@@ -81,7 +68,7 @@ exports.section = function(req, res) {
     function cacheHit(cache) {
         if(cache.hasOwnProperty('data') && cache.hasOwnProperty('last_modified')) {
             var timeHeld = (new Date()) - (new Date(cache.last_modified)); 
-            if( timeHeld < api.config.sectionCacheHoldTime) {
+            if( timeHeld < api.config.crnCacheHoldTime) {
                 res.jsonp(cache.data);
             } else {
                 cacheMiss();
@@ -92,8 +79,8 @@ exports.section = function(req, res) {
     }
 
     function cacheMiss() {
-        api.getSection(req.params.department, req.params.course, req.params.year, 
-                         req.params.semester, req.params.section, function(data) {
+        api.getCRN(req.params.department, req.params.course, req.params.year, 
+                         req.params.semester, req.params.crn, function(data) {
             api.resetCache(dbName, cacheID, data);
             res.jsonp(data);
         });

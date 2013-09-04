@@ -45,22 +45,26 @@ elasticSearch_api.prototype.refreshCore = function(callback) {
 	});
 }
 
-elasticSearch_api.prototype.getGPA = function(courseDepart, courseNumber, callback) {
+elasticSearch_api.prototype.getGradeData = function(courseDepart, courseNumber, callback) {
 	var cacheID = grade_api.genCacheID(courseDepart, courseNumber);
 	var dbName = 'grade_data_api';
 
 	grade_api.checkCache(dbName, cacheID, cacheHit, cacheMiss);
 
 	function cacheHit(cache) {
-		if(cache.hasOwnProperty('data') && cache.data.hasOwnProperty('statistics')) {
-			callback(cache.data.statistics);
+		if(cache.hasOwnProperty('data') && cache.data.hasOwnProperty('statistics') && cache.data.hasOwnProperty('profs')) {
+			var profList = [];
+			for(var prof in cache.data.profs) {
+				profList.push(cache.data.profs[prof].name);
+			}
+			callback(cache.data.statistics, profList);
 		} else {
-			throw new Error("Course ("+courseDepart+courseNumber+") does not have a statistics subset, please refresh grade statistics");
+			throw new Error("Course ("+courseDepart+courseNumber+") does not have a statistics/profs property, please refresh grade statistics");
 		}
 	}
 
-	function cacheMiss() { //Must be new course
-		callback('');
+	function cacheMiss() { 
+		callback({}, []); //New course there fore give empty grade obj, and empty profList array
 	}
 	
 }
@@ -85,28 +89,27 @@ elasticSearch_api.prototype.check_core_areas = function(courseDepart, courseNumb
 elasticSearch_api.prototype.refreshESRecords = function(year, semester) {
 	var that = this;
 	var departments = oscar_api.departments;
-	var params = {
-		"year" : year,
-		"semester" : semester,
-		"department" : ""
-	};
 	for(var depart in departments) {
-		params.department = depart;
-		oscar_api.getDepartment(params, processDepartment);
+		oscar_api.getDepartment(depart, year, semester, processDepartment);
 	}
 
 	function processDepartment(data) {
 		for(var courseNum in data) {
-			that.genESRecord(data[courseNum]);
+			that.genESRecord(data[courseNum], function(esRecord) {
+				//Generate ES document path (E.g: 2013/Fall/ECE2031)
+				var courseID = "" + esRecord.department.code.toUpperCase() + esRecord.number;
+				var esPath = year + "/" +semester.toUpperCase() +"/" + courseID;
+				that.pushESRecord(esPath, esRecord)
+			});
 		}
 	}
 }
 
-elasticSearch_api.prototype.genESRecord = function(courseData) {
+elasticSearch_api.prototype.genESRecord = function(courseData, callback) {
 	var that = this;
 	var core_areas = this.check_core_areas(courseData.department, courseData.number); //Ethics, Social Science...
 
-	this.getGPA(courseData.department, courseData.number, function(gpaStats) {
+	this.getGradeData(courseData.department, courseData.number, function(gpaStats, profList) {
 		var esRecord = ({
 			"name" : courseData.name,
 			"department" : {
@@ -120,12 +123,29 @@ elasticSearch_api.prototype.genESRecord = function(courseData) {
 			"labHours" : courseData.labHours,
 			"gradeBasis" : courseData.grade_basis,
 			"core_areas" : core_areas,
-			"grade" : gpaStats
+			"grade" : gpaStats,
+			"profs" : profList
 		});
-		that.pushESRecord(esRecord, (courseData.department+""+courseData.number));
+		callback(esRecord);
 	});
 }
 
-elasticSearch_api.prototype.pushESRecord = function(esRecord, id) {
-	//TODO
+elasticSearch_api.prototype.pushESRecord = function(esPath, esRecord) {
+	var esURL = oscar_api.config.esHost + ":" + oscar_api.config.esPort + "/" + esPath;
+	console.log("Pushing to ES: " + esPath); 
+
+	oscar_api.request.put({ "uri" : esURL, "body" : JSON.stringify(esRecord) }, function(error, response, body) {
+		if(JSON.parse(body).error) {
+			console.log(esPath);
+			console.log(esRecord);
+			throw new Error(JSON.parse(body).error);
+		} else {
+			if(JSON.parse(body).error) {
+				console.log("esURL" + esURL);
+				throw new Error(JSON.stringify(esRecord));
+			}
+		}
+	});
+	// console.log("Record: " + esPath);
+	// console.log(esRecord);
 }
