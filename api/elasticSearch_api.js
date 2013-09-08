@@ -14,8 +14,9 @@ exports.init = function() {
 elasticSearch_api.prototype.scrollID = function(scrollID, callback) {
 	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port;
 	oscar_api.request.get({ "uri" : esURL + '/_search/scroll?scroll=5m&scroll_id=' + scrollID }, function(error, response, body) {
-		if(error || !body || JSON.parse(body).error) {		
-			throw new Error(JSON.parse(body).error);
+		body = JSON.parse(body);
+		if(error || !body || body.error) {		
+			throw new Error(body.error);
 		} else {
 			callback(body);
 		}
