@@ -5,14 +5,99 @@ var grade_api = require('./grade_api.js').init();
 //run and inherit core_api constructor
 function elasticSearch_api() {
 	//Get The core_api course list so-as to be included into es
-	var that = this;
 	this.core_areas = [ 'areaC', 'areaE', 'globalPerspectives', 'usPerspectives', 'ethics' ];
-	//TEMP
-	this.refreshES('2013', 'fall');
 }
 
 exports.init = function() {
    return new elasticSearch_api();
+}
+elasticSearch_api.prototype.scrollID = function(scrollID, callback) {
+	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port;
+	oscar_api.request.get({ "uri" : esURL + '/_search/scroll?scroll=5m&scroll_id=' + scrollID }, function(error, response, body) {
+		if(error || !body || JSON.parse(body).error) {		
+			throw new Error(JSON.parse(body).error);
+		} else {
+			callback(body);
+		}
+	});
+}
+elasticSearch_api.prototype.query = function(queryString, year, semester, callback) {
+	var that = this;
+	var esquery = {
+		"query" : {
+			"bool" : {
+				"must" : [
+					{
+						"query_string" : { 
+							"analyze_wildcard" : "true",
+							"query" : queryString
+						}
+					}
+				]
+			}
+		}
+	};
+
+	//gpa filtering regex
+	var gpaMore = /gpa\s*(?:more than|greater than|>)\s*([0-9]+\.*[0-9]*)/i,
+		gpaLess = /gpa\s*(?:less than|<)\s*([0-9]+\.*[0-9]*)/i,
+		gpaRange = /gpa\s*(?:between|from|range|range from|ranges|ranges from|>)\s*([0-9]+\.*[0-9]*)\s*(?:to|-|<|and <)\s*([0-9]+\.*[0-9]*)/i;
+	if(match = gpaRange.exec(queryString)) {
+		esquery.query.bool.must.push({
+			"range" : {
+				"grade.gpa.mean" : {
+					"from" : match[1],
+					"to" : match[2]
+				}
+			}
+		});
+	} else if(match = gpaLess.exec(queryString)) {
+		esquery.query.bool.must.push({
+			"range" : {
+				"grade.gpa.mean" : {
+					"from" : "0",
+					"to" : match[1]
+				}
+			}
+		});
+	} else if(match = gpaMore.exec(queryString)) {
+		esquery.query.bool.must.push({
+			"range" : {
+				"grade.gpa.mean" : {
+					"from" : match[1],
+					"to" : "99"
+				}
+			}
+		});
+	}
+
+	//Course Level filtering
+	var courseLevel = /([0-9]+)(?:x+)/i;
+	if(match = courseLevel.exec(queryString)) {
+		esquery.query.bool.must.push({
+			"wildcard" : {
+				"number" : match[1] + "*"
+			}
+		});
+	}
+	
+	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + year + "/" + semester.toUpperCase();
+	oscar_api.request.get({ "uri" : esURL + '/_search?search_type=scan&scroll=10m&size=20', "body" : JSON.stringify(esquery) }, function(error, response, body) {
+		if(error || !body || JSON.parse(body).error) {		
+			throw new Error(JSON.parse(body).error);
+		} else {
+			//Get search results from scrollID
+			body  = JSON.parse(body);
+			if(body.hasOwnProperty('_scroll_id')) {
+				that.scrollID(body._scroll_id, callback);
+			} else { //Something weant wrong
+				callback(body);
+			}
+		}
+	});
+}
+elasticSearch_api.prototype.scroll = function(scrollID) {
+
 }
 /*
 	Wrapper function which refreshes the core curriculum cache, then refreshes ES Records
@@ -23,7 +108,6 @@ elasticSearch_api.prototype.refreshES = function(year, semester) {
 		that.refreshESRecords(year, semester);
 	});
 }
-
 
 elasticSearch_api.prototype.refreshCore = function(callback) {
 	var that = this;
@@ -131,21 +215,15 @@ elasticSearch_api.prototype.genESRecord = function(courseData, callback) {
 }
 
 elasticSearch_api.prototype.pushESRecord = function(esPath, esRecord) {
-	var esURL = oscar_api.config.esHost + ":" + oscar_api.config.esPort + "/" + esPath;
-	console.log("Pushing to ES: " + esPath); 
+	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + esPath;
 
 	oscar_api.request.put({ "uri" : esURL, "body" : JSON.stringify(esRecord) }, function(error, response, body) {
-		if(JSON.parse(body).error) {
+		if(error || !body || JSON.parse(body).error) {
 			console.log(esPath);
 			console.log(esRecord);
 			throw new Error(JSON.parse(body).error);
 		} else {
-			if(JSON.parse(body).error) {
-				console.log("esURL" + esURL);
-				throw new Error(JSON.stringify(esRecord));
-			}
+			console.log("Pushed to ES: " + esPath); 
 		}
 	});
-	// console.log("Record: " + esPath);
-	// console.log(esRecord);
 }

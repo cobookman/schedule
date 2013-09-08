@@ -82,10 +82,12 @@ exports.semester = function(req, res) {
 }
 
 exports.refreshStatistics = function(req, res) {
-    this.updateStatistics(dbName, function() { res.jsonp(["Refreshed"]); });
+    api.updateStatistics(dbName, function() { res.jsonp(["Refreshed"]); });
+    res.send("Updating Statistics in database");
 }
 
 exports.importJSON = function(req, res) {
     var filepath = '/Users/colin/srv/schedule/api/Data.json';
-    this.push2Cache(dbName, filepath);
+    api.push2Cache(dbName, filepath);
+    res.send("Pushing file: " + filepath + " to CouchDB");
 }

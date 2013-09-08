@@ -34,10 +34,10 @@ core_api.prototype.genBoxplotStats = function(dataset) {
         quartiles = this.jStat.quartiles(dataset);
         stdev = this.jStat.stdev(dataset);   
         IQR = quartiles[2] - quartiles[0];
-         
-        var highBound = quartiles[0] - 1.5*IQR,
-            lowBound = quartiles[2] + 1.5*IQR;
-            
+
+        var lowBound = quartiles[0] - 1.5*IQR,
+            highBound = quartiles[2] + 1.5*IQR;
+
         for(var i = 0; i<dataset.length; i++) {
             if(dataset[i] > highBound || dataset[i] < lowBound) {
                 outliers.push(dataset[i]);
@@ -45,9 +45,6 @@ core_api.prototype.genBoxplotStats = function(dataset) {
         }
     }
     var mean = this.jStat.mean(dataset)
-    //Get Outliers and mean
-    
-    
 
     return ({
         "mean" : mean.toFixed(2),

@@ -26,11 +26,18 @@ app.get('/api/grade/:department/:course', gradeController.course);
 app.get('/api/grade/:department/:course/:profID', gradeController.prof);
 app.get('/api/grade/:department/:course/:profID/:year', gradeController.year);
 app.get('/api/grade/:department/:course/:profID/:year/:semester', gradeController.semester);
+
+/* ElasticSearch */
+
+app.get('/api/search/:scrollID' , elasticSearchController.scrollID);
+app.get('/api/search/:year/:semester', elasticSearchController.search);
 /*
-	WARNING DO NOT ENABLE UNLES YOU WANT TO RUN THEM, POTENTIAL GRADE DATA LOSS, BACKUP DATABASE!
-							ONCE FUNCTION RUNS PLEASE RE-COMMENT		
-														*/
-//app.get('/api/grade/refreshStatistics', gradeController.refreshStatistics); //Enable this to allow refreshing of statistics through web interface
+	Warning Below API calls will consume considerable resources (memory/bandwith)		
+																					*/
+app.get('/api/grade/refreshStatistics', gradeController.refreshStatistics);
+app.get('/api/elasticsearch/refresh', elasticSearchController.refresh);
+
+
 //app.get('/api/grade/importJson', gradeController.importJSON); 	//Import the JSON database dump to couchDB, filepath defined in gradeController
 
 

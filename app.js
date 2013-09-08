@@ -18,7 +18,7 @@ app.set('view engine', 'hbs'); //Init Handlebars parsing of .html files
 app.use(express.favicon(__dirname + '/public/img/favicon.ico')); 
 app.use(express.logger('dev'));
 
-// app.use(express.bodyParser()); -- Parse Requests
+app.use(express.bodyParser()); // Parse POST Requests
 // app.use(express.methodOverride()); -- Use custom HTTP  methods
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
