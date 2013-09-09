@@ -13,7 +13,7 @@ var core_api = function() {
     this.departments = require('../department_list.js');
     this.cradleConnection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
     this.db = {}; //Init our db connections
-    this.jStat = require('jstat').jStat;
+    this.jStat = require('jStat').jStat;
 }
 
 core_api.prototype.toFloat = function(dataset) {
