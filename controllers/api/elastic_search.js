@@ -9,19 +9,22 @@ exports.refresh = function(req, res) {
 	res.send("Refeshing ElasticSearch, for year: " + req.params.year + ", semester: " + req.params.semester);
 }
 
-exports.scrollID = function(req, res) {
-	if(req.params.scrollID) {
-		api.scrollID(req.params.scrollID, function(data) {
-			res.jsonp(data);
-		});
-	} else {
-		res.jsonp([]);
-	}
-}
 exports.search = function(req, res) {
 	console.log(req.query);
+	
+	var from = 0; //optional param
+	if(req.query.hasOwnProperty('from')) {
+		from = req.query.from;
+	}
+
 	if(req.query.hasOwnProperty('query')) {
-		api.query(req.query.query, req.params.year, req.params.semester, function(data) { 
+		var params = {
+			"query" : req.query.query,
+			"from" : from,
+			"year" : req.params.year,
+			"semester" : req.params.semester
+		};
+		api.query(params, function(data) { 
 			res.jsonp(data);
 		});
 	} else {

@@ -28,9 +28,9 @@ app.get('/api/grade/:department/:course/:profID/:year', gradeController.year);
 app.get('/api/grade/:department/:course/:profID/:year/:semester', gradeController.semester);
 
 /* ElasticSearch */
-
-app.get('/api/search/:scrollID' , elasticSearchController.scrollID);
+//has params ?query="Query String"&from=#_of_result_to_start_from
 app.get('/api/search/:year/:semester', elasticSearchController.search);
+
 /*
 	Warning Below API calls will consume considerable resources (memory/bandwith)		
 																					*/

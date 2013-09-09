@@ -11,27 +11,25 @@ function elasticSearch_api() {
 exports.init = function() {
    return new elasticSearch_api();
 }
-elasticSearch_api.prototype.scrollID = function(scrollID, callback) {
-	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port;
-	oscar_api.request.get({ "uri" : esURL + '/_search/scroll?scroll=5m&scroll_id=' + scrollID }, function(error, response, body) {
-		body = JSON.parse(body);
-		if(error || !body || body.error) {		
-			throw new Error(body.error);
-		} else {
-			callback(body);
-		}
-	});
-}
-elasticSearch_api.prototype.query = function(queryString, year, semester, callback) {
-	var that = this;
+
+/* For function query params is:
+	{
+		"query" : req.query.query,
+		"from" : from, //Optional Param
+		"year" : req.params.year,
+		"semester" : req.params.semester //case insensitve
+	};
+*/
+elasticSearch_api.prototype.query = function(params, callback) {
 	var esquery = {
+		"from" : 0, "size" : 25,
 		"query" : {
 			"bool" : {
 				"must" : [
 					{
 						"query_string" : { 
 							"analyze_wildcard" : "true",
-							"query" : queryString
+							"query" : params.query
 						}
 					}
 				]
@@ -39,11 +37,15 @@ elasticSearch_api.prototype.query = function(queryString, year, semester, callba
 		}
 	};
 
+	if(!isNaN(params.from)) {
+		esquery.from = params.from;
+	}
+
 	//gpa filtering regex
 	var gpaMore = /gpa\s*(?:more than|greater than|>)\s*([0-9]+\.*[0-9]*)/i,
 		gpaLess = /gpa\s*(?:less than|<)\s*([0-9]+\.*[0-9]*)/i,
 		gpaRange = /gpa\s*(?:between|from|range|range from|ranges|ranges from|>)\s*([0-9]+\.*[0-9]*)\s*(?:to|-|<|and <)\s*([0-9]+\.*[0-9]*)/i;
-	if(match = gpaRange.exec(queryString)) {
+	if(match = gpaRange.exec(params.query)) {
 		esquery.query.bool.must.push({
 			"range" : {
 				"grade.gpa.mean" : {
@@ -52,7 +54,7 @@ elasticSearch_api.prototype.query = function(queryString, year, semester, callba
 				}
 			}
 		});
-	} else if(match = gpaLess.exec(queryString)) {
+	} else if(match = gpaLess.exec(params.query)) {
 		esquery.query.bool.must.push({
 			"range" : {
 				"grade.gpa.mean" : {
@@ -61,7 +63,7 @@ elasticSearch_api.prototype.query = function(queryString, year, semester, callba
 				}
 			}
 		});
-	} else if(match = gpaMore.exec(queryString)) {
+	} else if(match = gpaMore.exec(params.query)) {
 		esquery.query.bool.must.push({
 			"range" : {
 				"grade.gpa.mean" : {
@@ -71,35 +73,40 @@ elasticSearch_api.prototype.query = function(queryString, year, semester, callba
 			}
 		});
 	}
-
 	//Course Level filtering
 	var courseLevel = /([0-9]+)(?:x+)/i;
-	if(match = courseLevel.exec(queryString)) {
+	if(match = courseLevel.exec(params.query)) {
 		esquery.query.bool.must.push({
 			"wildcard" : {
 				"number" : match[1] + "*"
 			}
 		});
 	}
-	
-	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + year + "/" + semester.toUpperCase();
-	oscar_api.request.get({ "uri" : esURL + '/_search?search_type=scan&scroll=10m&size=20', "body" : JSON.stringify(esquery) }, function(error, response, body) {
+
+	//Parse out professor
+	var profs = /(?:taught by)\s*(\w+)/
+	if(match = profs.exec(params.query)) {
+		esquery.query.bool.must.push({
+			"query_string" : {
+				"default_field" : "profs",
+				"query" : match[1]
+			}
+		});
+	}
+	console.log("Query: " );
+	console.log(JSON.stringify(esquery));
+	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + params.year + "/" + params.semester.toUpperCase();
+	oscar_api.request.get({ "uri" : esURL + '/_search', "body" : JSON.stringify(esquery) }, function(error, response, body) {
 		if(error || !body || JSON.parse(body).error) {		
 			throw new Error(JSON.parse(body).error);
 		} else {
 			//Get search results from scrollID
 			body  = JSON.parse(body);
-			if(body.hasOwnProperty('_scroll_id')) {
-				that.scrollID(body._scroll_id, callback);
-			} else { //Something weant wrong
-				callback(body);
-			}
+			callback(body);
 		}
 	});
 }
-elasticSearch_api.prototype.scroll = function(scrollID) {
 
-}
 /*
 	Wrapper function which refreshes the core curriculum cache, then refreshes ES Records
 																							*/
