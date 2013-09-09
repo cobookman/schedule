@@ -18,9 +18,9 @@ exports.init = function() {
 //Returns string in format of: $(DEPARTMENT)$(COURSENUM)_$(YEAR)$(SEMESTER)
 oscar_api.prototype.genCacheID = function(req) {
     var cacheID = '';
-    if(typeof req.params.year === 'undefined' ||
-       typeof req.params.semester === 'undefined' ||
-       typeof req.params.department === 'undefined') {
+    if(typeof req.params.year !== 'string' ||
+       typeof req.params.semester !== 'string' ||
+       typeof req.params.department !== 'string') {
         
         throw new Error("Cannot gen cacheID without year/semester/department defined");
     } else {
@@ -28,17 +28,17 @@ oscar_api.prototype.genCacheID = function(req) {
     }
     
     //Check if given course, else return cacheID
-    if(typeof req.params.course === 'undefined') {
-        return cacheID;
+    if(typeof req.params.course !== 'string' && typeof req.params.crn !== 'number') {
+        return this.safeString(cacheID);
     } else {
         cacheID += req.params.course.toUpperCase();;
     }
 
     //Check if given crn
-    if(typeof req.params.crn === 'undefined') {
-        return cacheID;
+    if(typeof req.params.crn !== 'string' && typeof req.params.crn !== 'number') {
+        return this.safeString(cacheID);
     } else {
-        return cacheID += '-' + req.params.crn.toUpperCase();
+        return this.safeString(cacheID += '-' + req.params.crn.toUpperCase());
     }
 }
 oscar_api.prototype.currSemester = function() {
@@ -58,12 +58,12 @@ oscar_api.prototype.currSemester = function() {
 oscar_api.prototype.genDate = function(year, semester) {
     //Find current year if not provided
     var date = new Date();
-    if(typeof year === "undefined") {
+    if(typeof year !== "string" && typeof year !== "number") {
         year = date.getFullYear();
     }
 
     //Find current semester if not provided
-    if(typeof semester === "undefined") {
+    if(typeof semester !== "string") {
         semester = this.currSemester();
     } else {
         semester = semester.toLowerCase();
@@ -129,8 +129,11 @@ oscar_api.prototype.to24hour = function(time) {
    Core  Methods of oscar_api class 
                                     */
 oscar_api.prototype.getDepartment = function(department, year, semester, callback) {
-    var year = this.genDate(year, semester);
-    department = department.toUpperCase();
+
+    var year = this.safeString(this.genDate(year, semester));
+    department = this.safeString(department.toUpperCase());
+    semester = this.safeString(semester);
+
     var that = this;
     try { 
         this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_display_courses?sel_attr=dummy&sel_attr=%25&sel_coll=dummy&sel_coll=%25&sel_crse_end=9999&sel_crse_strt=0&sel_dept=dummy&sel_dept=%25&sel_divs=dummy&sel_divs=%25&sel_from_cred=&sel_levl=dummy&sel_levl=%25&sel_schd=dummy&sel_schd=%25&sel_subj=dummy&sel_subj='+department+'&sel_title=&sel_to_cred=&term_in='+year, process);
@@ -203,15 +206,25 @@ oscar_api.prototype.getDepartment = function(department, year, semester, callbac
                 console.log("ERROR, oscar_api.getDepartment("+department+",...), i: " + i);
             }
         }
-        
+        //Sanatize output
+        for(var i = 0; i < output.length; i++) {
+            for(var property in output[i]) {
+                output[i].property = that.safeString(output[i].property);
+            }
+        }
         callback(output);
     }//End Process
 }//End getDepartment
 
 oscar_api.prototype.getCourse = function(department, course, year, semester, callback) {
+    //Sanatize inputs
+    department = this.safeString(department.toUpperCase());
+    course = this.safeString(course.toUpperCase());
+    year = this.safeString(year);
+    semester = this.safeString(semester);
+
     var date = this.genDate(year, semester);
-    department = department.toUpperCase();
-    course = course.toUpperCase();
+
     var that = this;
     try {
         this.getURL('https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_listcrse?term_in='+date+'&subj_in='+department+'&crse_in='+course+'&schd_in=%', process);
@@ -257,13 +270,19 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
                 //Change time from AM/PM to 24 hour format
                 var time = that.to24hour(time);
                 
-                where.push({
+                var data = {
                     'day' : day,
                     'time' : time,
                     'location' : location,
                     'type' : type,
                     'prof' : prof
-                });
+                };
+                //Sanatize 
+                for(var prop in data) {
+                    data[prop] = that.safeString(data[prop]);
+                }
+
+                where.push(data);;
                 
                 //Get next row
                 meetingInfoRow = $(meetingInfoRow).next();
@@ -271,9 +290,9 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
             } while($(meetingInfo[0]).text() !== "");
 
                 output.sections.push({
-                    'crn' : course_CRN,
-                    'section' : course_Section,
-                    'where' : where,
+                    'crn' : that.safeString(course_CRN),
+                    'section' : that.safeString(course_Section),
+                    'where' : where
                 });
         }
 
@@ -282,10 +301,14 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
 }//End getSemester
 
 oscar_api.prototype.getCRN = function(department, course, year, semester, crn, callback) {
+    department = this.safeString(department.toUpperCase());
+    course = this.safeString(course.toUpperCase());
+    year = this.safeString(year);
+    semester = this.safeString(semester);
+    crn = this.safeString(crn.toUpperCase());
+
     var date = this.genDate(year, semester);
-    department = department.toUpperCase();
-    course = course.toUpperCase();
-    crn = crn.toUpperCase();
+    
     try { 
         this.getURL('https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in='+date+'&crn_in='+crn, process);
     } catch(e) {
@@ -327,6 +350,12 @@ oscar_api.prototype.getCRN = function(department, course, year, semester, crn, c
                 'remaining' : waitRemaining
             }
         }
+        for(var i in output) {
+            for(var j in output[i]) {
+                output[i][j] = that.safeString(output[i][j]);
+            }
+        }
+
         callback(output);
     }//End Process
 }//End getCRN

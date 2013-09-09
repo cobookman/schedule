@@ -11,23 +11,27 @@ exports.init = function() {
 }
 
 grade_api.prototype.genCacheID = function(department, course) {
-	if(typeof department === 'undefined' || typeof course === 'undefined') {
+	if(typeof department !== 'string' || (typeof course !== 'string' && typeof course !=='number')) {
 		throw new Error("undefined function parameters, department: " + department + ", course: " + course);
 	} else {
-		return ("" + department.toUpperCase() + course.toUpperCase());
+		return this.safeString("" + department.toUpperCase() + course.toUpperCase());
 	}
 }
 
 
 grade_api.prototype.updateStatistics = function(dbName, callback) {
+	dbName = this.safeString(dbName); //Make sure not mallicious
+
 	var cacheIDlist = this.checkCache(dbName, '_all_docs', parseList, error);
 	var that = this;
+
 	function parseList(idList) {
 		for(var i = 0; i < idList.length; i++) {
 			/* For each ID in the list, fetch the data, and 'parse the course data'
 				So that statistics can be generated
 				if a cacheMiss occurs throw an error
 														*/
+			idList[i].id = that.safeString(idList[i].id); //Sanatize ID
 			that.checkCache(dbName, idList[i].id, parseCourse, error);
 		}
 
@@ -108,6 +112,10 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
 	This is being kept in case I need to perform this operation again sometime in the future
 																						*/
 grade_api.prototype.push2Cache = function(dbName, filepath) {
+	//Sanatize inputs to try to prevent mallicious intent
+	dbName = this.safeString(dbName);
+	filepath = this.safeString(filepath);
+
 	fs = require('fs');
 	var that = this;
 	fs.readFile(filepath, 'utf8', function(err, data) {
@@ -126,10 +134,17 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 			console.log(data[0]);
 			//Start generating structured objc
 			var structuredData = {};
-			for(item in data) {
+			for(var item in data) {
+				//Sanatize and check input data
+				for(var prop in item) {
+					if(item.hasOwnProperty(prop) && typeof item[prop] !== 'object') {
+						item[prop] = that.safeString(item[prop]);
+					}
+				}
+
 				//Parse year/semester
-				var item = data[item];
-					item.Year= item.Year.split(' ');
+				item = data[item];
+				item.Year= item.Year.split(' ');
 
 				var year = item.Year[1],
 					semester = item.Year[0].toLowerCase();

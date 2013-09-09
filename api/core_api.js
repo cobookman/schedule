@@ -15,7 +15,16 @@ var core_api = function() {
     this.db = {}; //Init our db connections
     this.jStat = require('jStat').jStat;
 }
-
+//Removes everything which isnt a space, 0-9, a-z, A-Z, >, <, =, /, ., \, _, -, &, %, ?
+core_api.prototype.safeString = function(str) {
+    if(typeof str === 'string') {
+        return str.replace(/([^\w\s><=:\/\\\.\-_&%\?])/g, '');
+    } else if(typeof str ==='number') {
+        return "" + str;
+    } else {
+        return "";
+    }
+}
 core_api.prototype.toFloat = function(dataset) {
     for(var i = 0; i < dataset.length; i++) {
         dataset[i] = parseFloat(dataset[i], 10);
@@ -119,8 +128,8 @@ core_api.prototype.getCache = function(dbName, items, callback) {
         -if can't set cache returns false through callback
 */
 core_api.prototype.setCache = function(dbName, item, data, callback) {
-
-    var dbName = this.config.cache_database[dbName];
+    item = this.safeString(item);
+    var dbName = this.safeString(this.config.cache_database[dbName]);
     //Check if database has a connection already
     this.dbConnection(dbName);
 
@@ -134,6 +143,8 @@ core_api.prototype.setCache = function(dbName, item, data, callback) {
     });
 }
 core_api.prototype.getURL = function(url, callback) {
+    //Make sure URL is 'safe'
+    url = this.safeString(url);
     this.request.get(url, function(error, response, body) {
         if(!error && response.statusCode == 200) {
             typeof callback === 'function' && callback(body);

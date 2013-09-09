@@ -21,6 +21,14 @@ exports.init = function() {
 	};
 */
 elasticSearch_api.prototype.query = function(params, callback) {
+	//Make sure query is 'safe', all params should be a string, and non-empty
+	for(var i in params) {
+		params[i] = oscar_api.safeString(params[i]);
+		if(!(params[i].trim())) {
+			return callback([]);
+		}
+	}
+
 	var esquery = {
 		"from" : 0, "size" : 25,
 		"query" : {
@@ -93,7 +101,7 @@ elasticSearch_api.prototype.query = function(params, callback) {
 			}
 		});
 	}
-	
+
 	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + params.year + "/" + params.semester.toUpperCase();
 	oscar_api.request.get({ "uri" : esURL + '/_search', "body" : JSON.stringify(esquery) }, function(error, response, body) {
 		if(error || !body || JSON.parse(body).error) {		
@@ -111,6 +119,10 @@ elasticSearch_api.prototype.query = function(params, callback) {
 																							*/
 elasticSearch_api.prototype.refreshES = function(year, semester) {
 	var that = this;
+	//sanatize strings
+	year = oscar_api.safeString(year);
+	semester = oscar_api.safeString(semester);
+
 	this.refreshCore(function() {
 		that.refreshESRecords(year, semester);
 	});
@@ -197,7 +209,6 @@ elasticSearch_api.prototype.refreshESRecords = function(year, semester) {
 }
 
 elasticSearch_api.prototype.genESRecord = function(courseData, callback) {
-	var that = this;
 	var core_areas = this.check_core_areas(courseData.department, courseData.number); //Ethics, Social Science...
 
 	this.getGradeData(courseData.department, courseData.number, function(gpaStats, profList) {
@@ -222,8 +233,9 @@ elasticSearch_api.prototype.genESRecord = function(courseData, callback) {
 }
 
 elasticSearch_api.prototype.pushESRecord = function(esPath, esRecord) {
-	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + esPath;
 
+	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + esPath;
+	
 	oscar_api.request.put({ "uri" : esURL, "body" : JSON.stringify(esRecord) }, function(error, response, body) {
 		if(error || !body || JSON.parse(body).error) {
 			console.log(esPath);

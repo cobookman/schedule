@@ -43,10 +43,9 @@ exports.year = function(req, res) {
     var cacheID = api.genCacheID(req.params.department, req.params.course);
 
     api.getCache(dbName, cacheID, cacheHit, cacheMiss); 
-
     function cacheHit(cache) {
         if(cache.hasOwnProperty('data') && cache.data.profs.hasOwnProperty(profID) && cache.data.profs[profID].years.hasOwnProperty(year)) {
-            res.jsonp(cache.data.porofs[profID].years[year]);
+            res.jsonp(cache.data.profs[profID].years[year]);
         } else { 
             cacheMiss();
         }
@@ -61,7 +60,7 @@ exports.semester = function(req, res) {
     var profID = req.params.profID.toUpperCase();
     var year = req.params.year;
     var semester = req.params.semester.toLowerCase();
-    var cacheID = this.genCacheID(req.params.department, req.params.course);
+    var cacheID = api.genCacheID(req.params.department, req.params.course);
 
     api.getCache(dbName, cacheID, cacheHit, cacheMiss); 
 
