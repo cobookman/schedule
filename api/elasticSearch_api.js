@@ -93,8 +93,7 @@ elasticSearch_api.prototype.query = function(params, callback) {
 			}
 		});
 	}
-	console.log("Query: " );
-	console.log(JSON.stringify(esquery));
+	
 	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + params.year + "/" + params.semester.toUpperCase();
 	oscar_api.request.get({ "uri" : esURL + '/_search', "body" : JSON.stringify(esquery) }, function(error, response, body) {
 		if(error || !body || JSON.parse(body).error) {		

@@ -9,9 +9,7 @@ exports.refresh = function(req, res) {
 	res.send("Refeshing ElasticSearch, for year: " + req.params.year + ", semester: " + req.params.semester);
 }
 
-exports.search = function(req, res) {
-	console.log(req.query);
-	
+exports.search = function(req, res) {	
 	var from = 0; //optional param
 	if(req.query.hasOwnProperty('from')) {
 		from = req.query.from;
