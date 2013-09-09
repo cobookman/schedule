@@ -83,7 +83,6 @@ exports.semester = function(req, res) {
 
 exports.refreshStatistics = function(req, res) {
     api.updateStatistics(dbName, function() { res.jsonp(["Refreshed"]); });
-    res.send("Updating Statistics in database");
 }
 
 exports.importJSON = function(req, res) {

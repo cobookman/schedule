@@ -35,7 +35,7 @@ app.get('/api/search/:year/:semester', elasticSearchController.search);
 	Warning Below API calls will consume considerable resources (memory/bandwith)		
 																					*/
 app.get('/api/grade/refreshStatistics', gradeController.refreshStatistics);
-app.get('/api/elasticsearch/refresh', elasticSearchController.refresh);
+app.get('/api/elasticsearch/:year/:semester/refresh', elasticSearchController.refresh);
 
 
 //app.get('/api/grade/importJson', gradeController.importJSON); 	//Import the JSON database dump to couchDB, filepath defined in gradeController

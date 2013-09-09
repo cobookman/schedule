@@ -5,8 +5,8 @@ var api = require('../../api/elasticSearch_api').init();
 
 
 exports.refresh = function(req, res) {
-	api.refreshES(year, semester);
-	res.send("Refeshing ElasticSearch");
+	api.refreshES(req.params.year, req.params.semester);
+	res.send("Refeshing ElasticSearch, for year: " + req.params.year + ", semester: " + req.params.semester);
 }
 
 exports.scrollID = function(req, res) {
