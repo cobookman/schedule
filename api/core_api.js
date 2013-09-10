@@ -10,9 +10,9 @@ var core_api = function() {
 	this.request = require('request');
     this.cheerio = require('cheerio');
     this.config = require('../config.js');
-    this.departments = require('../department_list.js');
     this.cradleConnection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
     this.db = {}; //Init our db connections
+    this.departments = require('../department_list.js');
     this.jStat = require('jStat').jStat;
 }
 //Removes everything which isnt a space, 0-9, a-z, A-Z, >, <, =, /, ., \, _, -, &, %, ?
