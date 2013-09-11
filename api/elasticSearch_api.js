@@ -28,6 +28,9 @@ elasticSearch_api.prototype.query = function(params, callback) {
 			return callback([]);
 		}
 	}
+	//I used the core* prefix over the full word in the ES records, fix queries for accurate results
+	params.query = params.query.replace(/humanities/i, "areaC"); //humanities = areaC
+	params.query = params.query.replace(/(?:social sciences)|(?:social science)/i, "areaE"); //ethics = areaE
 
 	var esquery = {
 		"from" : 0, "size" : 25,
@@ -48,7 +51,7 @@ elasticSearch_api.prototype.query = function(params, callback) {
 	if(!isNaN(params.from)) {
 		esquery.from = params.from;
 	}
-
+	
 	//gpa filtering regex
 	var gpaMore = /gpa\s*(?:more than|greater than|>)\s*([0-9]+\.*[0-9]*)/i,
 		gpaLess = /gpa\s*(?:less than|<)\s*([0-9]+\.*[0-9]*)/i,
@@ -91,7 +94,7 @@ elasticSearch_api.prototype.query = function(params, callback) {
 		});
 	}
 
-	//Parse out professor
+	//Get professor
 	var profs = /(?:taught by)\s*(\w+)/
 	if(match = profs.exec(params.query)) {
 		esquery.query.bool.must.push({
@@ -101,6 +104,7 @@ elasticSearch_api.prototype.query = function(params, callback) {
 			}
 		});
 	}
+
 
 	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + params.year + "/" + params.semester.toUpperCase();
 	oscar_api.request.get({ "uri" : esURL + '/_search', "body" : JSON.stringify(esquery) }, function(error, response, body) {
