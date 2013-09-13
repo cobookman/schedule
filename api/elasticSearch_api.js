@@ -111,7 +111,7 @@ elasticSearch_api.prototype.query = function(params, callback) {
 		if(error || !body) {
 			throw new Error(error);
 		} else {
-			callback(body);
+			callback(JSON.parse(body));
 		}
 	});
 }
