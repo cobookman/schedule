@@ -108,12 +108,15 @@ elasticSearch_api.prototype.query = function(params, callback) {
 
 	var esURL = oscar_api.config.es.host + ":" + oscar_api.config.es.port + "/" + params.year + "/" + params.semester.toUpperCase();
 	oscar_api.request.get({ "uri" : esURL + '/_search', "body" : JSON.stringify(esquery) }, function(error, response, body) {
-		if(error || !body || JSON.parse(body).error) {		
-			throw new Error(JSON.parse(body).error);
+		if(error || !body) {
+			throw new Error(error);
 		} else {
-			//Get search results from scrollID
-			body  = JSON.parse(body);
-			callback(body);
+			var body = JSON.parse(body);
+			if(body.hasOwnProperty('error')) {
+				callback(JSON.parse(body).error);
+			} else {
+				callback(body);
+			}
 		}
 	});
 }
