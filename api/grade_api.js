@@ -96,7 +96,11 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
 			}
 			course.data.statistics = courseStats;
 			//Update each cache
-			that.setCache(dbName, course._id, course);
+			that.setCache(dbName, course._id, course, function(error,res) {
+				if(error) {
+					throw new Error(error);
+				}
+			});
 		}//End parseCourse function
 
 	}
@@ -176,7 +180,11 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 			}
 			//Push data to database
 			for(courseID in structuredData) {
-				that.setCache(dbName, courseID, { 'data' : structuredData[courseID] });
+				that.setCache(dbName, courseID, { 'data' : structuredData[courseID] }, function(error, response) {
+					if(error) {
+						throw new Error(error);
+					}
+				});
 			}
 			//Update statistics
 			// var dbName = 'grade_data_2';

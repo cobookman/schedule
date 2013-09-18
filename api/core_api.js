@@ -67,7 +67,11 @@ core_api.prototype.genBoxplotStats = function(dataset) {
 
 core_api.prototype.resetCache = function(dbName, cacheID, data) {
     if(!(Array.isArray(data) && data.length == 0)) { //don't cache empty arrays
-        this.setCache(dbName, cacheID, {'data' : data, 'last_modified' : new Date() } );         
+        this.setCache(dbName, cacheID, {'data' : data, 'last_modified' : new Date() }, function(error, response) {
+            if(error) {
+                console.log("Error reseting cache: " + error);
+            }
+        });         
     }
 }
 /*
@@ -136,9 +140,9 @@ core_api.prototype.setCache = function(dbName, item, data, callback) {
     //Initiate the save
     this.db[dbName].save(item, data, function(error, res) {
         if(!error && typeof callback === 'function') {
-            callback(res);
+            callback(null, res);
         } else if(error) {
-            throw new Error('ERROR setting cache ('+dbName+', '+JSON.stringify(item)+'): ' + JSON.stringify(error));
+            callback('ERROR setting cache ('+dbName+', '+JSON.stringify(item)+'): ' + JSON.stringify(error));
         }
     });
 }
@@ -147,9 +151,9 @@ core_api.prototype.getURL = function(url, callback) {
     url = this.safeString(url);
     this.request.get(url, function(error, response, body) {
         if(!error && response.statusCode == 200) {
-            typeof callback === 'function' && callback(body);
+            callback(null, body);
         } else {
-            throw new Error("Couldn't fetch URL: " + url + "Response code: " + response.statusCode);
+            callback("Couldn't fetch URL: " + url + "Response code: " + response.statusCode);
         }
     });
 }

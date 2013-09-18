@@ -12,6 +12,10 @@ exports.init = function() {
    return new oscar_api();
 }
 
+function sendError(msg, callback) {
+    callback([]);
+    console.log(msg);
+}
 /* 
    Helper Methods of oscar_api class 
                                     */
@@ -73,7 +77,7 @@ oscar_api.prototype.genDate = function(year, semester) {
         case "spring" : semester = '02'; break; 
         case "summer" : semester = '05'; break;
         case "fall"   : semester = '08'; break;
-        default : throw new Error("Unknown semester"); return undefined; break;
+        default       : semester = undefined; break;
     }
     return year + semester;
 }
@@ -141,7 +145,11 @@ oscar_api.prototype.getDepartment = function(department, year, semester, callbac
         console.log("Error fetching and parsing url: " + JSON.stringify(e));
     }
     
-    function process(data) {
+    function process(error, data) {
+        if(error) {
+            sendError(error, callback);
+        }
+
         $ = that.cheerio.load(data);
         //a .nttitle has a corr .ntdefault as of Aug 16, 2013
         var courseTitles = $(".nttitle");
@@ -232,7 +240,11 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
         console.log("Error fetching and parsing url: " + JSON.stringify(e));
     }
 
-    function process(data) {
+    function process(error, data) {
+        if(error) {
+            sendError(error, callback);
+        }
+
         $ = that.cheerio.load(data);
 
         var sectionTitles = $('th.ddtitle');
@@ -319,7 +331,11 @@ oscar_api.prototype.getCRN = function(department, course, year, semester, crn, c
     }
 
     var that = this;
-    function process(data) {
+    function process(error, data) {
+        if(error) {
+            sendError(error, callback);
+        }
+        
         $ = that.cheerio.load(data);
 
         var titleHeader = $($(".ddlabel")[0]).text().split(' - ');
