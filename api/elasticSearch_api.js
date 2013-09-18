@@ -169,7 +169,7 @@ elasticSearch_api.prototype.getGradeData = function(courseDepart, courseNumber, 
 	}
 
 	function cacheMiss() { 
-		callback({}, []); //New course there fore give empty grade obj, and empty profList array
+		callback({}, []); //Send empty data back - as it must be a new course.
 	}
 	
 }

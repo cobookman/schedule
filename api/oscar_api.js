@@ -73,7 +73,7 @@ oscar_api.prototype.genDate = function(year, semester) {
         case "spring" : semester = '02'; break; 
         case "summer" : semester = '05'; break;
         case "fall"   : semester = '08'; break;
-        default : console.log("ERROR - No semester provided"); return undefined; break;
+        default : throw new Error("Unknown semester"); return undefined; break;
     }
     return year + semester;
 }
@@ -265,7 +265,7 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
                     location = "";
                 }
                 var type = $(meetingInfo[5]).text().replace('*','');
-                var prof = $(meetingInfo[6]).text().replace(/ +(?= )/g,'');
+                var profs = $(meetingInfo[6]).text().replace(/ +(?= )/g,'').trim();
                 
                 //Change time from AM/PM to 24 hour format
                 var time = that.to24hour(time);
@@ -275,12 +275,15 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
                     'time' : time,
                     'location' : location,
                     'type' : type,
-                    'prof' : prof
+                    'profs' : profs
                 };
                 //Sanatize 
                 for(var prop in data) {
                     data[prop] = that.safeString(data[prop]);
                 }
+
+                /* Sometimes two profs given */
+                data.profs = data.profs.split(', ');
 
                 where.push(data);;
                 

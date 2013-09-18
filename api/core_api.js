@@ -15,10 +15,10 @@ var core_api = function() {
     this.departments = require('../department_list.js');
     this.jStat = require('jStat').jStat;
 }
-//Removes everything which isnt a space, 0-9, a-z, A-Z, >, <, =, /, ., \, _, -, &, %, ?
+//Removes everything which isnt a space, 0-9, a-z, A-Z, >, <, =, /, ., \, _, -, &, %, ?, (comma)
 core_api.prototype.safeString = function(str) {
     if(typeof str === 'string') {
-        return str.replace(/([^\w\s><=:\/\\\.\-_&%\?])/g, '');
+        return str.replace(/([^\w\s><=:\/\\\.\-_&%\?\,])/g, '');
     } else if(typeof str ==='number') {
         return "" + str;
     } else {
