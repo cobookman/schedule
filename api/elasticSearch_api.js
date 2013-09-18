@@ -186,9 +186,9 @@ elasticSearch_api.prototype.getProfList = function(year, semester, courseDepart,
 			}
 			//Get just the array keys (Professor Names)
 			var profs = [];
-			for(var key in profs) {
-                if(key!=='TBA') {
-				    profs.push(key);
+			for(var key in profList) {
+                if(key!=="TBA") {
+                    profs.push(key);
                 }
 			}
             callback(profs);
@@ -238,23 +238,28 @@ elasticSearch_api.prototype.genESRecord = function(year, semester, courseData, c
 	var that = this;
 	this.getGradeData(courseData.department, courseData.number, function(gpaStats) {
 		that.getProfList(year, semester, courseData.department, courseData.number, function(profList) {
-			var esRecord = ({
-				"name" : courseData.name,
-				"department" : {
-					"code" : courseData.department, 
-					"name" : grade_api.departments[courseData.department]
-				},
-				"number" : courseData.number,
-				"description" : courseData.description,
-				"creditHours" : courseData.creditHours,
-				"lectureHours" : courseData.lectureHours,
-				"labHours" : courseData.labHours,
-				"gradeBasis" : courseData.grade_basis,
-				"core_areas" : core_areas,
-				"grade" : gpaStats,
-                "profs" : profList
-			});
-			callback(esRecord);
+            //If profList is empty, then no-one is teaching the course for this semester
+            if(profList.length > 0) {
+			    var esRecord = ({
+				    "name" : courseData.name,
+				    "department" : {
+					   "code" : courseData.department, 
+					   "name" : grade_api.departments[courseData.department]
+				    },
+				    "number" : courseData.number,
+				    "description" : courseData.description,
+				    "creditHours" : courseData.creditHours,
+				    "lectureHours" : courseData.lectureHours,
+				    "labHours" : courseData.labHours,
+				    "gradeBasis" : courseData.grade_basis,
+				    "core_areas" : core_areas,
+				    "grade" : gpaStats,
+                    "profs" : profList
+			    });
+			    callback(esRecord);
+            } else {
+                console.log("Skipped over " + courseData.department + courseData.number+" , as no open sections for: " + year + " - " + semester);
+            }
 		});
 	});
 }

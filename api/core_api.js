@@ -153,7 +153,7 @@ core_api.prototype.getURL = function(url, callback) {
         if(!error && response.statusCode == 200) {
             callback(null, body);
         } else {
-            callback("Couldn't fetch URL: " + url + "Response code: " + response.statusCode);
+            callback("Couldn't fetch URL: " + url + "Error: " + error);
         }
     });
 }
