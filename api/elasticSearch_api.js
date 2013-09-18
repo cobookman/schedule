@@ -157,21 +157,43 @@ elasticSearch_api.prototype.getGradeData = function(courseDepart, courseNumber, 
 	grade_api.checkCache(dbName, cacheID, cacheHit, cacheMiss);
 
 	function cacheHit(cache) {
-		if(cache.hasOwnProperty('data') && cache.data.hasOwnProperty('statistics') && cache.data.hasOwnProperty('profs')) {
-			var profList = [];
-			for(var prof in cache.data.profs) {
-				profList.push(cache.data.profs[prof].name);
-			}
-			callback(cache.data.statistics, profList);
+		if(cache.hasOwnProperty('data') && cache.data.hasOwnProperty('statistics')) {
+			callback(cache.data.statistics);
 		} else {
 			throw new Error("Course ("+courseDepart+courseNumber+") does not have a statistics/profs property, please refresh grade statistics");
 		}
 	}
 
 	function cacheMiss() { 
-		callback({}, []); //Send empty data back - as it must be a new course.
+		callback({}); //Send empty data back - as it must be a new course.
 	}
 	
+}
+
+elasticSearch_api.prototype.getProfList = function(year, semester, courseDepart, courseNumber, callback) {
+	oscar_api.getCourse(courseDepart, courseNumber, year, semester, function(data) {
+		var profList = []; //Using hashtable to find uniques (aka prof=>'', where key is data)
+		if(!data.hasOwnProperty('sections')) {
+            callback([]);
+        } else {
+			for(var section in data.sections) {
+				for(var place in data.sections[section].where) {
+					place = data.sections[section].where[place];
+					for(var prof in place.profs) {
+						profList[place.profs[prof]] = '';
+					}
+				}
+			}
+			//Get just the array keys (Professor Names)
+			var profs = [];
+			for(var key in profs) {
+                if(key!=='TBA') {
+				    profs.push(key);
+                }
+			}
+            callback(profs);
+        }
+	});
 }
 /*
 	Checks the core records to find which areas it matches the specified course
@@ -192,6 +214,7 @@ elasticSearch_api.prototype.check_core_areas = function(courseDepart, courseNumb
 }
 
 elasticSearch_api.prototype.refreshESRecords = function(year, semester) {
+
 	var that = this;
 	var departments = oscar_api.departments;
 	for(var depart in departments) {
@@ -200,7 +223,7 @@ elasticSearch_api.prototype.refreshESRecords = function(year, semester) {
 
 	function processDepartment(data) {
 		for(var courseNum in data) {
-			that.genESRecord(data[courseNum], function(esRecord) {
+			that.genESRecord(year, semester, data[courseNum], function(esRecord) {
 				//Generate ES document path (E.g: 2013/Fall/ECE2031)
 				var courseID = "" + esRecord.department.code.toUpperCase() + esRecord.number;
 				var esPath = year + "/" +semester.toUpperCase() +"/" + courseID;
@@ -210,27 +233,29 @@ elasticSearch_api.prototype.refreshESRecords = function(year, semester) {
 	}
 }
 
-elasticSearch_api.prototype.genESRecord = function(courseData, callback) {
+elasticSearch_api.prototype.genESRecord = function(year, semester, courseData, callback) {
 	var core_areas = this.check_core_areas(courseData.department, courseData.number); //Ethics, Social Science...
-
-	this.getGradeData(courseData.department, courseData.number, function(gpaStats, profList) {
-		var esRecord = ({
-			"name" : courseData.name,
-			"department" : {
-				"code" : courseData.department, 
-				"name" : grade_api.departments[courseData.department]
-			},
-			"number" : courseData.number,
-			"description" : courseData.description,
-			"creditHours" : courseData.creditHours,
-			"lectureHours" : courseData.lectureHours,
-			"labHours" : courseData.labHours,
-			"gradeBasis" : courseData.grade_basis,
-			"core_areas" : core_areas,
-			"grade" : gpaStats,
-			"profs" : profList
+	var that = this;
+	this.getGradeData(courseData.department, courseData.number, function(gpaStats) {
+		that.getProfList(year, semester, courseData.department, courseData.number, function(profList) {
+			var esRecord = ({
+				"name" : courseData.name,
+				"department" : {
+					"code" : courseData.department, 
+					"name" : grade_api.departments[courseData.department]
+				},
+				"number" : courseData.number,
+				"description" : courseData.description,
+				"creditHours" : courseData.creditHours,
+				"lectureHours" : courseData.lectureHours,
+				"labHours" : courseData.labHours,
+				"gradeBasis" : courseData.grade_basis,
+				"core_areas" : core_areas,
+				"grade" : gpaStats,
+                "profs" : profList
+			});
+			callback(esRecord);
 		});
-		callback(esRecord);
 	});
 }
 
