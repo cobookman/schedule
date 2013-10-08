@@ -26,6 +26,18 @@ function sendData(req, res, cacheID, cacheMiss) {
 /////////////////////
 /// ROUTE ACTIONS ///
 /////////////////////
+/*
+    List available semesters 
+                                */
+exports.semester_list = function(req, res) {
+    res.jsonp(api.config.semesters);
+}
+/*
+    List all departments
+                            */
+exports.department_list = function(req, res) {
+    res.jsonp(api.departments);
+}
 /* Export list of courses the requested department offers E.G: ECE */
 exports.department = function(req, res) {
     var cacheID = api.genCacheID(req);

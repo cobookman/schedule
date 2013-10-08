@@ -1,16 +1,16 @@
 /*
-	Core API functionality, this class is inherited by all other apis
-		exporting of module @ bottom of file
-																		*/
+    Core API functionality, this class is inherited by all other apis
+        exporting of module @ bottom of file
+                                                                        */
 //Core_API specific
 var cradle = require('cradle');
 
 //Constructor
 var core_api = function() {
-	this.request = require('request');
+    this.request = require('request');
     this.cheerio = require('cheerio');
     this.config = require('../config.js');
-    this.cradleConnection = new(cradle.Connection)(this.config.dbHost, this.config.dbPort, { cache: true, raw: false });
+    this.cradleConnection = new(cradle.Connection)(this.config.db.host, this.config.db.port, { cache: true, raw: false });
     this.db = {}; //Init our db connections
     this.departments = require('../department_list.js');
     this.jStat = require('jStat').jStat;
@@ -112,7 +112,7 @@ core_api.prototype.dbConnection = function(database) {
 core_api.prototype.getCache = function(dbName, items, callback) {
     //Async operation, needs a callback
     if(typeof callback !== 'function') { return false; }
-    var dbName = this.config.cache_database[dbName];
+    var dbName = this.safeString(this.config.cache_tables[dbName]);
     //check if dabase has been connected to already (cache purposes)
     this.dbConnection(dbName);
 
@@ -131,18 +131,18 @@ core_api.prototype.getCache = function(dbName, items, callback) {
         -if sets cache returns couchdb msg
         -if can't set cache returns false through callback
 */
-core_api.prototype.setCache = function(dbName, item, data, callback) {
-    item = this.safeString(item);
-    var dbName = this.safeString(this.config.cache_database[dbName]);
+core_api.prototype.setCache = function(dbName, id, data, callback) {
+    id = this.safeString(id);
+    var dbName = this.safeString(this.config.cache_tables[dbName]);
     //Check if database has a connection already
     this.dbConnection(dbName);
 
     //Initiate the save
-    this.db[dbName].save(item, data, function(error, res) {
+    this.db[dbName].save(id, data, function(error, res) {
         if(!error && typeof callback === 'function') {
             callback(null, res);
         } else if(error) {
-            callback('ERROR setting cache ('+dbName+', '+JSON.stringify(item)+'): ' + JSON.stringify(error));
+            callback('ERROR setting cache ('+dbName+', '+JSON.stringify(id)+'): ' + JSON.stringify(error));
         }
     });
 }

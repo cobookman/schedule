@@ -40,4 +40,6 @@ http.createServer(app).listen(app.get('port'), function(){
 
 //Export express app for other modules to use
 module.exports.app = app;
+
 var routes = require('./routes.js');
+

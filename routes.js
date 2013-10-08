@@ -1,16 +1,21 @@
 app = module.parent.exports.app;
 
+dataState = module.parent.exports.dataState;
+module.exports.dataState = dataState;
+
 /*Get controllers*/
-var searchController = require('./controllers/search');
+var searchResultController = require('./controllers/search-results.js');
 var oscarController = require('./controllers/api/oscar.js');
 var coreCurriculumController = require('./controllers/api/core_curriculum.js');
 var errorAPIController = require('./controllers/api/error.js');
 var gradeController = require('./controllers/api/grades.js');
 var elasticSearchController = require('./controllers/api/elastic_search.js');
 /* Site Routes */
-app.get('/search', searchController.search);
+app.get('/:year/:semester/search', searchResultController.search);
 
 /* restFul API */
+app.get('/api/oscar/:year/', oscarController.semester_list);
+app.get('/api/oscar/:year/:semester', oscarController.department_list);
 app.get('/api/oscar/:year/:semester/:department', oscarController.department);
 app.get('/api/oscar/:year/:semester/:department/:course', oscarController.course);
 app.get('/api/oscar/:year/:semester/:department/:course/:crn', oscarController.crn);
@@ -32,13 +37,13 @@ app.get('/api/grade/:department/:course/:profID/:year/:semester', gradeControlle
 app.get('/api/search/:year/:semester', elasticSearchController.search);
 
 /*
-	Warning Below API calls will consume considerable resources (memory/bandwith)		
-																					*/
+    Warning Below API calls will consume considerable resources (memory/bandwith)       
+                                                                                    */
 app.get('/api/grade/refreshStatistics', gradeController.refreshStatistics);
 app.get('/api/elasticsearch/:year/:semester/refresh', elasticSearchController.refresh);
 
 
-//app.get('/api/grade/importJson', gradeController.importJSON); 	//Import the JSON database dump to couchDB, filepath defined in gradeController
+//app.get('/api/grade/importJson', gradeController.importJSON);     //Import the JSON database dump to couchDB, filepath defined in gradeController
 
 
 /* Catch-All API ERROR MESSAGES */
