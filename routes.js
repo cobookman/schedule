@@ -10,6 +10,7 @@ var coreCurriculumController = require('./controllers/api/core_curriculum.js');
 var errorAPIController = require('./controllers/api/error.js');
 var gradeController = require('./controllers/api/grades.js');
 var elasticSearchController = require('./controllers/api/elastic_search.js');
+var scheduleController = require('./controllers/api/schedules.js');
 /* Site Routes */
 app.get('/:year/:semester/search', searchResultController.search);
 
@@ -31,6 +32,11 @@ app.get('/api/grade/:department/:course', gradeController.course);
 app.get('/api/grade/:department/:course/:profID', gradeController.prof);
 app.get('/api/grade/:department/:course/:profID/:year', gradeController.year);
 app.get('/api/grade/:department/:course/:profID/:year/:semester', gradeController.semester);
+
+app.get('/api/schedules/:username', scheduleController.get);
+app.put('/api/schedules/:username', scheduleController.put);
+app.delete('/api/schedules/:username', scheduleController.delete);
+
 
 /* ElasticSearch */
 //has params ?query="Query String"&from=#_of_result_to_start_from

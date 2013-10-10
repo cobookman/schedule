@@ -109,15 +109,18 @@ core_api.prototype.dbConnection = function(database) {
     }
 }
 
-core_api.prototype.getCache = function(dbName, items, callback) {
+core_api.prototype.getCache = function(dbName, item, callback) {
     //Async operation, needs a callback
     if(typeof callback !== 'function') { return false; }
+
     var dbName = this.safeString(this.config.cache_tables[dbName]);
+    item = this.safeString(item);
+
     //check if dabase has been connected to already (cache purposes)
     this.dbConnection(dbName);
 
     //Get items
-    this.db[dbName].get(items, function(error, doc) {
+    this.db[dbName].get(item, function(error, doc) {
         if(!error) {
             callback(doc);
         } else {
