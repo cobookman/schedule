@@ -32,7 +32,8 @@ exports.search = function(req, res){
         title: "Page Title Here",
         active_semester: active,
         semesters: [ cust_semester, global_semesters ],
-        query : query_str
+        query : query_str,
     }
+    console.log(res.locals);
   res.render('search'); //Render search.hbs template
 };

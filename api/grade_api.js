@@ -8,7 +8,7 @@ grade_api.prototype = Object.create(core_api.prototype);
 
 exports.init = function() {
    return new grade_api();
-}
+};
 
 grade_api.prototype.genCacheID = function(department, course) {
     if(typeof department !== 'string' || (typeof course !== 'string' && typeof course !=='number')) {
@@ -16,22 +16,23 @@ grade_api.prototype.genCacheID = function(department, course) {
     } else {
         return this.safeString("" + department.toUpperCase() + course.toUpperCase());
     }
-}
+};
 
 
 grade_api.prototype.updateStatistics = function(dbName, callback) {
     dbName = this.safeString(dbName); //Make sure not mallicious
-
     var cacheIDlist = this.checkCache(dbName, '_all_docs', parseList, error);
     var that = this;
 
     function parseList(idList) {
+        var counter = 0;
         for(var i = 0; i < idList.length; i++) {
             /* For each ID in the list, fetch the data, and 'parse the course data'
                 So that statistics can be generated
                 if a cacheMiss occurs throw an error
                                                         */
             idList[i].id = that.safeString(idList[i].id); //Sanatize ID
+            counter++;
             that.checkCache(dbName, idList[i].id, parseCourse, error);
         }
 
@@ -46,7 +47,7 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
                 'F' : [],
                 'W' : [],
                 'gpa' : []
-            }
+            };
             console.log("Running parseCourse for: " + course._id);
             for(var prof in course.data.profs) {
                 var profOverall = {
@@ -57,7 +58,7 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
                     'F' : [],
                     'W' : [],
                     'gpa' : []
-                }
+                };
                 for(var year in course.data.profs[prof].years) {
                     for(var semester in course.data.profs[prof].years[year].semesters) {
                         for(var section in course.data.profs[prof].years[year].semesters[semester].sections) {
@@ -100,6 +101,11 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
                 if(error) {
                     throw new Error(error);
                 }
+                if(--counter==0) {
+                    console.log("DONE IMPORTING");
+                } else {
+                    console.log("Importing counter: " + counter);
+                }
             });
         }//End parseCourse function
 
@@ -118,8 +124,9 @@ grade_api.prototype.updateStatistics = function(dbName, callback) {
 grade_api.prototype.push2Cache = function(dbName, filepath) {
     //Sanatize inputs to try to prevent mallicious intent
     dbName = this.safeString(dbName);
+    console.log("Storing in dbName: " + dbName);
     filepath = this.safeString(filepath);
-
+    console.log("Importing: " + filepath);
     fs = require('fs');
     var that = this;
     fs.readFile(filepath, 'utf8', function(err, data) {
@@ -134,7 +141,7 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
             // }
             
             data[6] = data[6].replace(/\\/g, "").replace(/(:\s+)(\w+\.?\w*)/g, '$1"$2"').replace(/\w+(\")+\w/g, '$1').replace(/\"\"(\w+)\"\"/g,'"$1"').replace(/\"(\w+)\"\"/g, '$1"');
-            var data = JSON.parse(data[6]);
+            data = JSON.parse(data[6]);
             console.log(data[0]);
             //Start generating structured objc
             var structuredData = {};
@@ -152,10 +159,12 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
 
                 var year = item.Year[1],
                     semester = item.Year[0].toLowerCase();
-                
+                    
                 //INIT crazy obj
                 if(typeof structuredData[item.courseID] === 'undefined') {
-                    structuredData[item.courseID] = { 'profs' : {} };
+                    var department = item.Course.split(' ')[0];
+                    var number = item.Course.split(' ')[1];
+                    structuredData[item.courseID] = { 'profs' : {}, department : department, number: number };
                 }
                 if(typeof structuredData[item.courseID].profs[item.profID] === 'undefined') {
                     structuredData[item.courseID].profs[item.profID] = { 'name' : item.Prof, 'years' : {} };
@@ -179,16 +188,21 @@ grade_api.prototype.push2Cache = function(dbName, filepath) {
                 };
             }
             //Push data to database
+            var counter = 0;
             for(courseID in structuredData) {
+                counter++;
                 that.setCache(dbName, courseID, { 'data' : structuredData[courseID] }, function(error, response) {
                     if(error) {
                         throw new Error(error);
+                    }
+                    console.log('Saved');
+                    if(--counter ==0) {
+                        console.log("DONE");
                     }
                 });
             }
             //Update statistics
             // var dbName = 'grade_data_2';
             // that.updateStatistics(dbName, function() {});
-            console.log("DONE");
     });
 }

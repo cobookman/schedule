@@ -108,10 +108,9 @@ oscar_api.prototype.credit2num = function(str) {
 */
 oscar_api.prototype.to24hour = function(time) {
     for(var j = 0; j < time.length; j ++) {
-        time[j] = time[j].split(/:| /); 
+        time[j] = time[j].split(/:| /); //E.g: [12, 45], [12, 45, pm]
         //Convert 12 hour to 24 hour
         if(time[j].length === 3) {
-
             time[j][0] = parseInt(time[j][0], 10);
             //Convert pm times to 24 hour format, and handle that 12:xx pm = 12:xx
             if(time[j][2].indexOf('pm') !== -1 && time[j][0] < 12) {
@@ -230,7 +229,6 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
     course = this.safeString(course.toUpperCase());
     year = this.safeString(year);
     semester = this.safeString(semester);
-
     var date = this.genDate(year, semester);
 
     var that = this;
@@ -269,35 +267,55 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
             var meetingInfoRow = $(sectionInfo[i+1]).next().next(),
                 meetingInfo = $(meetingInfoRow).children();
                 var where = [];
+                var prof = 'TBA';
             do {
                 var day = $(meetingInfo[2]).text().trim(); //TRIM() needed as day might be empty
                 var time = $(meetingInfo[1]).text().split(' - ');
                 var location = $(meetingInfo[3]).text();
-                if(!location || location.toLowerCase() === 'tba') {
+                if(!location) {
                     location = "";
                 }
+                //Shorten to CULC
+                if(location.indexOf("Clough Undergraduate Commons") >=0) {
+                    location = location.replace("Clough Undergraduate Commons", "CULC");
+                }
                 var type = $(meetingInfo[5]).text().replace('*','');
-                var profs = $(meetingInfo[6]).text().replace(/ +(?= )/g,'').trim();
+                var profs = $(meetingInfo[6]).text().replace(/ +(?= )/g,'').split(',');
+                //Only store the prof with a (P) by his/her name
+                if(prof === 'TBA') {
+                    for(var p = 0; p < profs.length; ++p) {
+                        if(profs[p].indexOf('(P)') > 0) {
+                            prof = profs[p].replace('(P)', '').trim();
+                            prof = prof.split(' ');
+                            //middleInitial
+                            var middleName = '';
+                            var lastname = prof[1];
+                            if(prof.length === 3) {
+                                middleName = prof[1];
+                                lastname = prof[2];
+                            }
+                            //lastname, firstname middileInitial
+                            prof = lastname +', '+prof[0] + ' '+ middleName;
+                            break;
+                        }
+                    }
+                }
                 
+
                 //Change time from AM/PM to 24 hour format
-                var time = that.to24hour(time);
-                
-                var data = {
+                time = that.to24hour(time);
+                var outputdata = {
                     'day' : day,
                     'time' : time,
                     'location' : location,
                     'type' : type,
-                    'profs' : profs
                 };
                 //Sanatize 
-                for(var prop in data) {
-                    data[prop] = that.safeString(data[prop]);
+                for(var prop in outputdata) {
+                    outputdata[prop] = outputdata[prop];
                 }
-
-                /* Sometimes two profs given */
-                data.profs = data.profs.split(', ');
-
-                where.push(data);;
+                
+                where.push(outputdata);
                 
                 //Get next row
                 meetingInfoRow = $(meetingInfoRow).next();
@@ -307,7 +325,8 @@ oscar_api.prototype.getCourse = function(department, course, year, semester, cal
                 output.sections.push({
                     'crn' : that.safeString(course_CRN),
                     'section' : that.safeString(course_Section),
-                    'where' : where
+                    'where' : where,
+                    'prof' : prof
                 });
         }
 
@@ -368,7 +387,7 @@ oscar_api.prototype.getCRN = function(department, course, year, semester, crn, c
                 'actual' : waitActual,
                 'remaining' : waitRemaining
             }
-        }
+        };
         for(var i in output) {
             for(var j in output[i]) {
                 output[i][j] = that.safeString(output[i][j]);
