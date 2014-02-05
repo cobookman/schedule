@@ -10,23 +10,25 @@ function elasticSearch_api() {
 
 exports.init = function() {
    return new elasticSearch_api();
-}
+};
 elasticSearch_api.prototype.getResults = function(req, callback) {
     var from = 0; //optional param
     var size = 25; //show @ most 25 results per page
     if(req.query.hasOwnProperty('page')) {
-        from = req.query.page * 25; //each page shows 25 results
+        //page in [1, +inf];
+        //page 1 shows hits 0->24, page 2 shows hits 25->49..etc
+        from = (req.query.page -1) * 25; //each page shows 25 results
     }
-
 
     if(req.query.hasOwnProperty('query')) {
         var params = {
             "query" : req.query.query,
             "from" : from,
             "year" : req.params.year,
-            "semester" : req.params.semester
+            "semester" : req.params.semester,
+            "size" : size
         };
-        this.query(params, function(data) { 
+        this.query(params, function(data) {
             callback(data);
         });
     } else {
@@ -54,12 +56,12 @@ elasticSearch_api.prototype.query = function(params, callback) {
     params.query = params.query.replace(/(?:social sciences)|(?:social science)/i, "areaE"); //ethics = areaE
 
     var esquery = {
-        "from" : 0, "size" : size,
+        "from" : 0, "size" : params.size,
         "query" : {
             "bool" : {
                 "must" : [
                     {
-                        "query_string" : { 
+                        "query_string" : {
                             "analyze_wildcard" : "true",
                             "query" : params.query
                         }
