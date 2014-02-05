@@ -13,9 +13,11 @@ exports.init = function() {
 }
 elasticSearch_api.prototype.getResults = function(req, callback) {
     var from = 0; //optional param
-    if(req.query.hasOwnProperty('from')) {
-        from = req.query.from;
+    var size = 25; //show @ most 25 results per page
+    if(req.query.hasOwnProperty('page')) {
+        from = req.query.page * 25; //each page shows 25 results
     }
+
 
     if(req.query.hasOwnProperty('query')) {
         var params = {
@@ -52,7 +54,7 @@ elasticSearch_api.prototype.query = function(params, callback) {
     params.query = params.query.replace(/(?:social sciences)|(?:social science)/i, "areaE"); //ethics = areaE
 
     var esquery = {
-        "from" : 0, "size" : 25,
+        "from" : 0, "size" : size,
         "query" : {
             "bool" : {
                 "must" : [
