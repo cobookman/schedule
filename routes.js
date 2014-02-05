@@ -12,7 +12,7 @@ var gradeController = require('./controllers/api/grades.js');
 var elasticSearchController = require('./controllers/api/elastic_search.js');
 var scheduleController = require('./controllers/api/schedules.js');
 /* Site Routes */
-app.get('/:year/:semester/search', searchResultController.search);
+app.get('/search', searchResultController.search);
 
 /* restFul API */
 app.get('/api/oscar/:year/', oscarController.semester_list);
@@ -49,7 +49,7 @@ app.get('/api/grade/refreshStatistics', gradeController.refreshStatistics);
 app.get('/api/elasticsearch/:year/:semester/refresh', elasticSearchController.refresh);
 
 
-//app.get('/api/grade/importJson', gradeController.importJSON);     //Import the JSON database dump to couchDB, filepath defined in gradeController
+app.get('/api/grade/importJson', gradeController.importJSON);     //Import the JSON database dump to couchDB, filepath defined in gradeController
 
 
 /* Catch-All API ERROR MESSAGES */
